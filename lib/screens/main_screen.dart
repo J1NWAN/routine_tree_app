@@ -1,104 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'home_screen.dart';
-import 'statistics_screen.dart';
-import 'forest_screen.dart';
-import 'settings_screen.dart';
-import '../widgets/add_routine_dialog.dart';
+import 'package:go_router/go_router.dart';
+import '../router/app_router.dart';
 
-class MainScreen extends ConsumerStatefulWidget {
-  const MainScreen({super.key});
+class MainScreen extends ConsumerWidget {
+  final Widget child;
 
-  @override
-  ConsumerState<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends ConsumerState<MainScreen> {
-  int _selectedIndex = 0;
-
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const StatisticsScreen(),
-    const ForestScreen(), // 중앙 버튼 화면
-    const SettingsScreen(),
-  ];
+  const MainScreen({super.key, required this.child});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _screens),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-      floatingActionButton: _buildCenterButton(),
+      body: child,
+      bottomNavigationBar: _buildBottomNavigationBar(context, ref),
+      floatingActionButton: _buildCenterButton(context),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  Widget _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar(BuildContext context, WidgetRef ref) {
+    // 현재 선택된 인덱스 가져오기
+    final selectedIndex = ref.watch(selectedIndexProvider);
+
     return BottomAppBar(
-      // height: 75,
       color: Colors.grey[700],
       elevation: 8,
       shape: const CircularNotchedRectangle(),
       notchMargin: 6.0,
-      child: SizedBox(
-        height: 75,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            // 홈
-            _buildNavItem(icon: Icons.home_rounded, label: '홈', index: 0, onTap: () => _onItemTapped(0)),
-            // 통계
-            _buildNavItem(icon: Icons.bar_chart_rounded, label: '통계', index: 1, onTap: () => _onItemTapped(1)),
-            // 중앙 공간 (FAB를 위한 여백)
-            const SizedBox(width: 50),
-            // 내 숲 - 인덱스 2로 변경
-            _buildNavItem(icon: Icons.park_rounded, label: '내 숲', index: 2, onTap: () => _onItemTapped(2)),
-            // 설정
-            _buildNavItem(icon: Icons.settings_rounded, label: '설정', index: 3, onTap: () => _onItemTapped(3)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({required IconData icon, required String label, required int index, required VoidCallback onTap}) {
-    final isSelected = _selectedIndex == index;
-
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: isSelected ? const Color(0xFF4CAF50) : Colors.grey[600], size: 24),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isSelected ? const Color(0xFF4CAF50) : Colors.grey[600],
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-            ],
+      height: 45,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          // 홈
+          _buildNavItem(context: context, ref: ref, icon: Icons.calendar_month_rounded, index: 0, route: '/', selectedIndex: selectedIndex),
+          // 통계
+          _buildNavItem(
+            context: context,
+            ref: ref,
+            icon: Icons.bar_chart_rounded,
+            index: 1,
+            route: '/statistics',
+            selectedIndex: selectedIndex,
           ),
-        ),
+          // 중앙 공간 (FAB를 위한 여백)
+          const SizedBox(width: 50),
+          // 내 숲
+          _buildNavItem(context: context, ref: ref, icon: Icons.park_rounded, index: 2, route: '/forest', selectedIndex: selectedIndex),
+          // 설정
+          _buildNavItem(
+            context: context,
+            ref: ref,
+            icon: Icons.settings_rounded,
+            index: 3,
+            route: '/settings',
+            selectedIndex: selectedIndex,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildCenterButton() {
+  Widget _buildNavItem({
+    required BuildContext context,
+    required WidgetRef ref,
+    required IconData icon,
+    required int index,
+    required String route,
+    required int selectedIndex,
+  }) {
+    final isSelected = selectedIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        // 선택된 인덱스 업데이트
+        ref.read(selectedIndexProvider.notifier).state = index;
+        // GoRouter로 라우팅
+        context.go(route);
+      },
+      child: SizedBox(
+        height: 45,
+        child: Center(child: Icon(icon, color: isSelected ? const Color(0xFF4CAF50) : Colors.grey[600], size: 28)),
+      ),
+    );
+  }
+
+  Widget _buildCenterButton(BuildContext context) {
     return SizedBox(
       width: 56,
       height: 56,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: _onCenterButtonTapped,
+          onTap: () => _onCenterButtonTapped(context),
           borderRadius: BorderRadius.circular(28),
           child: Container(
             decoration: const BoxDecoration(shape: BoxShape.circle),
@@ -109,14 +102,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     );
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _onCenterButtonTapped() {
-    // 중앙 나무 버튼 액션 - 새 루틴 추가 다이얼로그 표시
-    showDialog(context: context, builder: (context) => const AddRoutineDialog());
+  void _onCenterButtonTapped(BuildContext context) {
+    // 중앙 나무 버튼 액션
+    context.go('/routine');
   }
 }

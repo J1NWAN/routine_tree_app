@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'services/database_service.dart';
-import 'screens/main_screen.dart';
+import 'router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,12 +12,15 @@ void main() async {
   runApp(const ProviderScope(child: RoutineTreeApp()));
 }
 
-class RoutineTreeApp extends StatelessWidget {
+class RoutineTreeApp extends ConsumerWidget {
   const RoutineTreeApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(goRouterProvider);
+
+    return MaterialApp.router(
+      routerConfig: router,
       title: '루틴트리',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -42,7 +45,6 @@ class RoutineTreeApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4CAF50), brightness: Brightness.dark),
         useMaterial3: true,
       ),
-      home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
