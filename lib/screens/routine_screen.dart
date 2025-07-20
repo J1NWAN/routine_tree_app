@@ -24,7 +24,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
         // 알림 켜질 때: 컨테이너 먼저 확장
         _containerExpanded = false;
         // 컨테이너 확장 완료 후 콘텐츠 표시
-        Future.delayed(const Duration(milliseconds: 0), () {
+        Future.delayed(const Duration(milliseconds: 50), () {
           if (mounted && _isAlarmEnabled) {
             setState(() {
               _containerExpanded = true;
@@ -52,10 +52,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.go('/')),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -65,246 +62,280 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
 
           return ClipRect(
             // overflow 완전 차단
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 15,
-                ),
-                child: Column(
-                  children: [
-                    // 반복 설정 컨테이너 (그대로 유지)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 15,
+            child: Column(
+              children: [
+                // 스크롤 가능한 콘텐츠 영역
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      child: Column(
+                        children: [
+                          // 루틴 이름 입력
+                          TextField(
+                            decoration: InputDecoration(
+                              hintText: '루틴 이름',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: const Color.fromRGBO(235, 235, 235, 1.0),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      '반복',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      '요일을 선택해주세요.',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey.withOpacity(0.8),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Expanded(child: SizedBox()),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    ...List.generate(
-                                      7,
-                                      (index) => Container(
-                                        width: 35,
-                                        height: 35,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white,
-                                          border: Border.all(
-                                            color: Colors.grey.withOpacity(0.5),
-                                          ),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '일',
+                          ),
+                          const SizedBox(height: 30),
+
+                          // 반복 설정 컨테이너 (기존 코드 그대로)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromRGBO(235, 235, 235, 1.0),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text(
+                                            '반복',
                                             style: TextStyle(
-                                              color: Colors.grey.withOpacity(
-                                                0.8,
-                                              ),
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        ),
+                                          Text(
+                                            '요일을 선택해주세요.',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey.withOpacity(0.8),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    // 시작 시간 설정 컨테이너 (순차적 애니메이션)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: AnimatedContainer(
-                            duration: const Duration(
-                              milliseconds: 400,
-                            ), // 컨테이너 확장 시간
-                            curve: Curves.easeOutCubic,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 15,
-                            ),
-                            height:
-                                _isAlarmEnabled ? 280 : 100, // 1단계: 컨테이너 크기 변경
-                            decoration: BoxDecoration(
-                              color: const Color.fromRGBO(235, 235, 235, 1.0),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      '시작',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Text(
-                                      '시작 시간을 선택해주세요.',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey.withOpacity(0.8),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                // 토글 스위치는 즉시 표시
-                                Row(
-                                  children: [
-                                    Expanded(child: _buildAlarmToggleSwitch()),
-                                  ],
-                                ),
-
-                                // 2단계: 컨테이너 확장 완료 후 콘텐츠 표시
-                                Expanded(
-                                  child: AnimatedOpacity(
-                                    duration: const Duration(milliseconds: 300),
-                                    opacity:
-                                        (_isAlarmEnabled && _containerExpanded)
-                                            ? 1.0
-                                            : 0.0,
-                                    child:
-                                        (_isAlarmEnabled && _containerExpanded)
-                                            ? Column(
-                                              children: [
-                                                const SizedBox(height: 15),
-                                                // 선택된 시간 표시
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        vertical: 8,
-                                                        horizontal: 12,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(
-                                                      0xFF4CAF50,
-                                                    ).withOpacity(0.1),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
+                                      const Expanded(child: SizedBox()),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: [
+                                          ...List.generate(
+                                            7,
+                                            (index) => Container(
+                                              width: 35,
+                                              height: 35,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: Colors.white,
+                                                border: Border.all(
+                                                  color: Colors.grey.withOpacity(0.5),
+                                                ),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  '일',
+                                                  style: TextStyle(
+                                                    color: Colors.grey.withOpacity(0.8),
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
                                                   ),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+
+                          // 시작 시간 설정 컨테이너 (기존 코드 그대로)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 400), // 컨테이너 확장 시간
+                                  curve: Curves.easeOutCubic,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                  height: _isAlarmEnabled ? 320 : 100, // 1단계: 컨테이너 크기 변경
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromRGBO(235, 235, 235, 1.0),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text(
+                                            '시작',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Text(
+                                            '시작 시간을 선택해주세요.',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.grey.withOpacity(0.8),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      // 토글 스위치는 즉시 표시
+                                      Row(children: [Expanded(child: _buildAlarmToggleSwitch())]),
+
+                                      // 2단계: 컨테이너 확장 완료 후 콘텐츠 표시
+                                      Expanded(
+                                        child: AnimatedOpacity(
+                                          duration: const Duration(milliseconds: 300),
+                                          opacity:
+                                              (_isAlarmEnabled && _containerExpanded) ? 1.0 : 0.0,
+                                          child:
+                                              (_isAlarmEnabled && _containerExpanded)
+                                                  ? Column(
                                                     children: [
-                                                      const Icon(
-                                                        Icons.access_time,
-                                                        color: Color(
-                                                          0xFF4CAF50,
+                                                      const SizedBox(height: 15),
+                                                      // 선택된 시간 표시
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(
+                                                          vertical: 8,
+                                                          horizontal: 12,
                                                         ),
-                                                        size: 16,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.grey.withOpacity(0.1),
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment.center,
+                                                          children: [
+                                                            const Icon(
+                                                              Icons.access_time,
+                                                              color: Colors.black,
+                                                              size: 16,
+                                                            ),
+                                                            const SizedBox(width: 6),
+                                                            Text(
+                                                              _formatTime(_selectedTime),
+                                                              style: const TextStyle(
+                                                                fontSize: 14,
+                                                                fontWeight: FontWeight.w600,
+                                                                color: Colors.black,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
                                                       ),
-                                                      const SizedBox(width: 6),
-                                                      Text(
-                                                        _formatTime(
-                                                          _selectedTime,
-                                                        ),
-                                                        style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: Color(
-                                                            0xFF4CAF50,
+                                                      const SizedBox(height: 10),
+                                                      // Cupertino 시간 선택기
+                                                      Expanded(
+                                                        child: Container(
+                                                          decoration: BoxDecoration(
+                                                            //color: Colors.white,
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                          child: CupertinoDatePicker(
+                                                            mode: CupertinoDatePickerMode.time,
+                                                            use24hFormat: false,
+                                                            initialDateTime: _selectedTime,
+                                                            onDateTimeChanged: (DateTime newTime) {
+                                                              setState(() {
+                                                                _selectedTime = newTime;
+                                                              });
+                                                            },
                                                           ),
                                                         ),
                                                       ),
                                                     ],
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 10),
-                                                // Cupertino 시간 선택기
-                                                Expanded(
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                    ),
-                                                    child: CupertinoDatePicker(
-                                                      mode:
-                                                          CupertinoDatePickerMode
-                                                              .time,
-                                                      use24hFormat: false,
-                                                      initialDateTime:
-                                                          _selectedTime,
-                                                      onDateTimeChanged: (
-                                                        DateTime newTime,
-                                                      ) {
-                                                        setState(() {
-                                                          _selectedTime =
-                                                              newTime;
-                                                        });
-                                                      },
+                                                  )
+                                                  : const SizedBox(),
+                                        ),
+                                      ),
+                                      (_isAlarmEnabled && _containerExpanded)
+                                          ? Column(
+                                            children: [
+                                              const SizedBox(height: 20),
+                                              // 알림 설정 버튼
+                                              GestureDetector(
+                                                onTap: () {
+                                                  print('요일별 설정');
+                                                },
+                                                child: Container(
+                                                  width: 80,
+                                                  height: 30,
+                                                  decoration: BoxDecoration(
+                                                    color: const Color.fromRGBO(235, 235, 235, 1.0),
+                                                    borderRadius: BorderRadius.circular(15),
+                                                    border: Border.all(
+                                                      color: Colors.grey.withOpacity(0.3),
                                                     ),
                                                   ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      '요일별 설정',
+                                                      style: TextStyle(
+                                                        color: Colors.black,
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.normal,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
-                                              ],
-                                            )
-                                            : const SizedBox(),
+                                              ),
+                                            ],
+                                          )
+                                          : const SizedBox(),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+
+                          const SizedBox(height: 20), // 하단 여백
+                        ],
+                      ),
                     ),
-                    SizedBox(height: availableHeight * 0.2), // 동적 하단 여백
-                  ],
+                  ),
                 ),
-              ),
+
+                // 고정된 완료 버튼
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: SafeArea(
+                    top: false,
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // 루틴 저장 로직
+                          _saveRoutine();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color.fromRGBO(61, 65, 75, 1),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          '완료',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         },
@@ -324,8 +355,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final toggleWidth =
-                (constraints.maxWidth - 6) / 2; // 전체 너비의 절반에서 여백 제외
+            final toggleWidth = (constraints.maxWidth - 6) / 2; // 전체 너비의 절반에서 여백 제외
 
             return Stack(
               children: [
@@ -333,9 +363,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                 Container(
                   width: double.infinity,
                   height: 35,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(25)),
                   child: Row(
                     children: [
                       // 왼쪽 아이콘 (알림)
@@ -381,7 +409,6 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                     width: toggleWidth, // 동적 너비
                     decoration: BoxDecoration(
                       color: Color.fromRGBO(61, 65, 75, 1),
-
                       borderRadius: BorderRadius.circular(19), // 높이에 맞춰 조정
                       boxShadow: [
                         BoxShadow(
@@ -395,14 +422,8 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                     child: Center(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (
-                          Widget child,
-                          Animation<double> animation,
-                        ) {
-                          return ScaleTransition(
-                            scale: animation,
-                            child: child,
-                          );
+                        transitionBuilder: (Widget child, Animation<double> animation) {
+                          return ScaleTransition(scale: animation, child: child);
                         },
                         child: Icon(
                           _isAlarmEnabled
@@ -420,6 +441,24 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  // 루틴 저장 메서드 추가
+  void _saveRoutine() {
+    // 여기에 루틴 저장 로직 구현
+    print('루틴 저장: ${_formatTime(_selectedTime)}, 알림: $_isAlarmEnabled');
+
+    // 저장 후 이전 페이지로 돌아가기
+    context.go('/');
+
+    // 또는 성공 메시지 표시
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('루틴이 저장되었습니다!'),
+        backgroundColor: Color(0xFF4CAF50),
+        duration: Duration(seconds: 2),
       ),
     );
   }
