@@ -16,6 +16,15 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
   bool _containerExpanded = true; // 컨테이너 확장 완료 상태
   DateTime _selectedTime = DateTime.now();
 
+  // 요일 선택 상태 관리 (일~토: 0~6)
+  final List<bool> _selectedWeekdays = [false, false, false, false, false, false, false];
+
+  // 요일 이름 (축약형)
+  final List<String> _weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+  // 요일 이름 (전체형)
+  final List<String> _fullWeekdayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+
   // 알림 토글 시 순차적 애니메이션 처리
   void _toggleAlarm() {
     setState(() {
@@ -106,7 +115,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                             ),
                                           ),
                                           Text(
-                                            '요일을 선택해주세요.',
+                                            _getSelectedWeekdaysText(),
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
@@ -121,23 +130,40 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                         children: [
                                           ...List.generate(
                                             7,
-                                            (index) => Container(
-                                              width: 35,
-                                              height: 35,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: Colors.white,
-                                                border: Border.all(
-                                                  color: Colors.grey.withOpacity(0.5),
+                                            (index) => GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedWeekdays[index] =
+                                                      !_selectedWeekdays[index];
+                                                });
+                                              },
+                                              child: Container(
+                                                width: 35,
+                                                height: 35,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color:
+                                                      _selectedWeekdays[index]
+                                                          ? const Color.fromRGBO(61, 65, 75, 1)
+                                                          : Colors.white,
+                                                  border: Border.all(
+                                                    color:
+                                                        _selectedWeekdays[index]
+                                                            ? const Color.fromRGBO(61, 65, 75, 1)
+                                                            : Colors.grey.withOpacity(0.5),
+                                                  ),
                                                 ),
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  '일',
-                                                  style: TextStyle(
-                                                    color: Colors.grey.withOpacity(0.8),
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
+                                                child: Center(
+                                                  child: Text(
+                                                    _weekdayNames[index],
+                                                    style: TextStyle(
+                                                      color:
+                                                          _selectedWeekdays[index]
+                                                              ? Colors.white
+                                                              : Colors.grey.withOpacity(0.8),
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -445,10 +471,44 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     );
   }
 
+  // 선택된 요일들을 텍스트로 변환하는 메서드
+  String _getSelectedWeekdaysText() {
+    final selectedDays = <String>[];
+    final selectedFullDays = <String>[];
+
+    for (int i = 0; i < _selectedWeekdays.length; i++) {
+      if (_selectedWeekdays[i]) {
+        selectedDays.add(_weekdayNames[i]);
+        selectedFullDays.add(_fullWeekdayNames[i]);
+      }
+    }
+
+    if (selectedDays.isEmpty) {
+      return '요일을 선택해주세요.';
+    } else if (selectedDays.length == 7) {
+      return '매일';
+    } else if (selectedDays.length == 5 &&
+        _selectedWeekdays[1] &&
+        _selectedWeekdays[2] &&
+        _selectedWeekdays[3] &&
+        _selectedWeekdays[4] &&
+        _selectedWeekdays[5]) {
+      return '평일';
+    } else if (selectedDays.length == 2 && _selectedWeekdays[0] && _selectedWeekdays[6]) {
+      return '주말';
+    } else if (selectedDays.length == 1) {
+      // 하나만 선택된 경우 전체 요일명 사용
+      return selectedFullDays.first;
+    } else {
+      // 두 개 이상 선택된 경우 축약형 사용
+      return selectedDays.join(', ');
+    }
+  }
+
   // 루틴 저장 메서드 추가
   void _saveRoutine() {
-    // 여기에 루틴 저장 로직 구현
-    print('루틴 저장: ${_formatTime(_selectedTime)}, 알림: $_isAlarmEnabled');
+    final selectedDays = _getSelectedWeekdaysText();
+    print('루틴 저장: ${_formatTime(_selectedTime)}, 알림: $_isAlarmEnabled, 요일: $selectedDays');
 
     // 저장 후 이전 페이지로 돌아가기
     context.go('/');
