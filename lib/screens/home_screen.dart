@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/routine_provider.dart';
 import '../widgets/calendar_widget.dart';
 import '../widgets/routine_schedule_card.dart';
-import '../widgets/add_routine_dialog.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -54,7 +54,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 8),
 
                 // 루틴 리스트
-                if (todayRoutines.isEmpty) _buildEmptyState() else _buildRoutineList(todayRoutines),
+                //if (todayRoutines.isEmpty) _buildEmptyState() else _buildRoutineList(todayRoutines),
+                _buildEmptyState(),
 
                 const SizedBox(height: 100), // 바텀 네비게이션 여백
               ],
@@ -77,7 +78,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Text('새로운 습관을 만들어보세요! 🌱', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[500])),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => _showAddRoutineDialog(context),
+            onPressed: () => context.go('/routine'),
             icon: const Icon(Icons.add),
             label: const Text('루틴 추가'),
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4CAF50), foregroundColor: Colors.white),
@@ -115,7 +116,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showAddRoutineDialog(BuildContext context) {
-    showDialog(context: context, builder: (context) => const AddRoutineDialog());
-  }
 }

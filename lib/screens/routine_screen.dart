@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart'; // Cupertino 위젯 사용을 위해 추가
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/routine_provider.dart';
 import 'dart:math' as math;
 
 class RoutineScreen extends ConsumerStatefulWidget {
@@ -12,18 +13,37 @@ class RoutineScreen extends ConsumerStatefulWidget {
 }
 
 class _RoutineScreenState extends ConsumerState<RoutineScreen> {
+  final TextEditingController _nameController = TextEditingController();
   bool _isAlarmEnabled = false;
   bool _containerExpanded = true; // 컨테이너 확장 완료 상태
   DateTime _selectedTime = DateTime.now();
+  bool _isSaving = false;
+  Map<int, DateTime>? _weekdayTimes; // 요일별 개별 시간 설정
 
   // 요일 선택 상태 관리 (일~토: 0~6)
-  final List<bool> _selectedWeekdays = [false, false, false, false, false, false, false];
+  final List<bool> _selectedWeekdays = [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+  ];
 
   // 요일 이름 (축약형)
   final List<String> _weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
   // 요일 이름 (전체형)
-  final List<String> _fullWeekdayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+  final List<String> _fullWeekdayNames = [
+    '일요일',
+    '월요일',
+    '화요일',
+    '수요일',
+    '목요일',
+    '금요일',
+    '토요일',
+  ];
 
   // 알림 토글 시 순차적 애니메이션 처리
   void _toggleAlarm() {
@@ -33,7 +53,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
         // 알림 켜질 때: 컨테이너 먼저 확장
         _containerExpanded = false;
         // 컨테이너 확장 완료 후 콘텐츠 표시
-        Future.delayed(const Duration(milliseconds: 50), () {
+        Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted && _isAlarmEnabled) {
             setState(() {
               _containerExpanded = true;
@@ -61,7 +81,10 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.go('/')),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -78,14 +101,20 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                   child: SingleChildScrollView(
                     physics: const ClampingScrollPhysics(),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 15,
+                      ),
                       child: Column(
                         children: [
                           // 루틴 이름 입력
                           TextField(
+                            controller: _nameController,
                             decoration: InputDecoration(
-                              hintText: '루틴 이름',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                              hintText: '예) 루틴 이름',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 30),
@@ -96,16 +125,25 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                             children: [
                               Expanded(
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 15,
+                                  ),
                                   height: 100,
                                   decoration: BoxDecoration(
-                                    color: const Color.fromRGBO(235, 235, 235, 1.0),
+                                    color: const Color.fromRGBO(
+                                      235,
+                                      235,
+                                      235,
+                                      1.0,
+                                    ),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Column(
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           const Text(
                                             '반복',
@@ -119,14 +157,17 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.grey.withOpacity(0.8),
+                                              color: Colors.grey.withOpacity(
+                                                0.8,
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
                                       const Expanded(child: SizedBox()),
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
                                         children: [
                                           ...List.generate(
                                             7,
@@ -144,13 +185,26 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                                   shape: BoxShape.circle,
                                                   color:
                                                       _selectedWeekdays[index]
-                                                          ? const Color.fromRGBO(61, 65, 75, 1)
+                                                          ? const Color.fromRGBO(
+                                                            61,
+                                                            65,
+                                                            75,
+                                                            1,
+                                                          )
                                                           : Colors.white,
                                                   border: Border.all(
                                                     color:
                                                         _selectedWeekdays[index]
-                                                            ? const Color.fromRGBO(61, 65, 75, 1)
-                                                            : Colors.grey.withOpacity(0.5),
+                                                            ? const Color.fromRGBO(
+                                                              61,
+                                                              65,
+                                                              75,
+                                                              1,
+                                                            )
+                                                            : Colors.grey
+                                                                .withOpacity(
+                                                                  0.5,
+                                                                ),
                                                   ),
                                                 ),
                                                 child: Center(
@@ -160,9 +214,13 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                                       color:
                                                           _selectedWeekdays[index]
                                                               ? Colors.white
-                                                              : Colors.grey.withOpacity(0.8),
+                                                              : Colors.grey
+                                                                  .withOpacity(
+                                                                    0.8,
+                                                                  ),
                                                       fontSize: 14,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -185,18 +243,32 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                             children: [
                               Expanded(
                                 child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 400), // 컨테이너 확장 시간
+                                  duration: const Duration(
+                                    milliseconds: 400,
+                                  ), // 컨테이너 확장 시간
                                   curve: Curves.easeOutCubic,
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                                  height: _isAlarmEnabled ? 320 : 100, // 1단계: 컨테이너 크기 변경
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 15,
+                                  ),
+                                  height:
+                                      _isAlarmEnabled
+                                          ? 320
+                                          : 100, // 1단계: 컨테이너 크기 변경
                                   decoration: BoxDecoration(
-                                    color: const Color.fromRGBO(235, 235, 235, 1.0),
+                                    color: const Color.fromRGBO(
+                                      235,
+                                      235,
+                                      235,
+                                      1.0,
+                                    ),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Column(
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           const Text(
                                             '시작',
@@ -210,72 +282,114 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.grey.withOpacity(0.8),
+                                              color: Colors.grey.withOpacity(
+                                                0.8,
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 10),
                                       // 토글 스위치는 즉시 표시
-                                      Row(children: [Expanded(child: _buildAlarmToggleSwitch())]),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildAlarmToggleSwitch(),
+                                          ),
+                                        ],
+                                      ),
 
                                       // 2단계: 컨테이너 확장 완료 후 콘텐츠 표시
                                       Expanded(
                                         child: AnimatedOpacity(
-                                          duration: const Duration(milliseconds: 300),
+                                          duration: const Duration(
+                                            milliseconds: 300,
+                                          ),
                                           opacity:
-                                              (_isAlarmEnabled && _containerExpanded) ? 1.0 : 0.0,
+                                              (_isAlarmEnabled &&
+                                                      _containerExpanded)
+                                                  ? 1.0
+                                                  : 0.0,
                                           child:
-                                              (_isAlarmEnabled && _containerExpanded)
+                                              (_isAlarmEnabled &&
+                                                      _containerExpanded)
                                                   ? Column(
                                                     children: [
-                                                      const SizedBox(height: 15),
+                                                      const SizedBox(
+                                                        height: 15,
+                                                      ),
                                                       // 선택된 시간 표시
                                                       Container(
-                                                        padding: const EdgeInsets.symmetric(
-                                                          vertical: 8,
-                                                          horizontal: 12,
-                                                        ),
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              vertical: 8,
+                                                              horizontal: 12,
+                                                            ),
                                                         decoration: BoxDecoration(
-                                                          color: Colors.grey.withOpacity(0.1),
-                                                          borderRadius: BorderRadius.circular(8),
+                                                          color: Colors.grey
+                                                              .withOpacity(0.1),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
                                                         ),
                                                         child: Row(
                                                           mainAxisAlignment:
-                                                              MainAxisAlignment.center,
+                                                              MainAxisAlignment
+                                                                  .center,
                                                           children: [
                                                             const Icon(
                                                               Icons.access_time,
-                                                              color: Colors.black,
+                                                              color:
+                                                                  Colors.black,
                                                               size: 16,
                                                             ),
-                                                            const SizedBox(width: 6),
+                                                            const SizedBox(
+                                                              width: 6,
+                                                            ),
                                                             Text(
-                                                              _formatTime(_selectedTime),
+                                                              _formatTime(
+                                                                _selectedTime,
+                                                              ),
                                                               style: const TextStyle(
                                                                 fontSize: 14,
-                                                                fontWeight: FontWeight.w600,
-                                                                color: Colors.black,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color:
+                                                                    Colors
+                                                                        .black,
                                                               ),
                                                             ),
                                                           ],
                                                         ),
                                                       ),
-                                                      const SizedBox(height: 10),
+                                                      const SizedBox(
+                                                        height: 10,
+                                                      ),
                                                       // Cupertino 시간 선택기
                                                       Expanded(
                                                         child: Container(
                                                           decoration: BoxDecoration(
                                                             //color: Colors.white,
-                                                            borderRadius: BorderRadius.circular(8),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  8,
+                                                                ),
                                                           ),
                                                           child: CupertinoDatePicker(
-                                                            mode: CupertinoDatePickerMode.time,
+                                                            mode:
+                                                                CupertinoDatePickerMode
+                                                                    .time,
                                                             use24hFormat: false,
-                                                            initialDateTime: _selectedTime,
-                                                            onDateTimeChanged: (DateTime newTime) {
+                                                            initialDateTime:
+                                                                _selectedTime,
+                                                            onDateTimeChanged: (
+                                                              DateTime newTime,
+                                                            ) {
                                                               setState(() {
-                                                                _selectedTime = newTime;
+                                                                _selectedTime =
+                                                                    newTime;
                                                               });
                                                             },
                                                           ),
@@ -292,17 +406,24 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                               const SizedBox(height: 20),
                                               // 알림 설정 버튼
                                               GestureDetector(
-                                                onTap: () {
-                                                  print('요일별 설정');
-                                                },
+                                                onTap: _openWeekdaySchedule,
                                                 child: Container(
                                                   width: 80,
                                                   height: 30,
                                                   decoration: BoxDecoration(
-                                                    color: const Color.fromRGBO(235, 235, 235, 1.0),
-                                                    borderRadius: BorderRadius.circular(15),
+                                                    color: const Color.fromRGBO(
+                                                      235,
+                                                      235,
+                                                      235,
+                                                      1.0,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          15,
+                                                        ),
                                                     border: Border.all(
-                                                      color: Colors.grey.withOpacity(0.3),
+                                                      color: Colors.grey
+                                                          .withOpacity(0.3),
                                                     ),
                                                   ),
                                                   child: Center(
@@ -311,7 +432,8 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                                       style: TextStyle(
                                                         color: Colors.black,
                                                         fontSize: 12,
-                                                        fontWeight: FontWeight.normal,
+                                                        fontWeight:
+                                                            FontWeight.normal,
                                                       ),
                                                     ),
                                                   ),
@@ -336,27 +458,41 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
 
                 // 고정된 완료 버튼
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   child: SafeArea(
                     top: false,
                     child: SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // 루틴 저장 로직
-                          _saveRoutine();
-                        },
+                        onPressed: _isSaving ? null : _saveRoutine,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color.fromRGBO(61, 65, 75, 1),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          '완료',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                '완료',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -381,7 +517,8 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final toggleWidth = (constraints.maxWidth - 6) / 2; // 전체 너비의 절반에서 여백 제외
+            final toggleWidth =
+                (constraints.maxWidth - 6) / 2; // 전체 너비의 절반에서 여백 제외
 
             return Stack(
               children: [
@@ -389,7 +526,9 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                 Container(
                   width: double.infinity,
                   height: 35,
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(25)),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
                   child: Row(
                     children: [
                       // 왼쪽 아이콘 (알림)
@@ -448,8 +587,14 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                     child: Center(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (Widget child, Animation<double> animation) {
-                          return ScaleTransition(scale: animation, child: child);
+                        transitionBuilder: (
+                          Widget child,
+                          Animation<double> animation,
+                        ) {
+                          return ScaleTransition(
+                            scale: animation,
+                            child: child,
+                          );
                         },
                         child: Icon(
                           _isAlarmEnabled
@@ -494,7 +639,9 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
         _selectedWeekdays[4] &&
         _selectedWeekdays[5]) {
       return '평일';
-    } else if (selectedDays.length == 2 && _selectedWeekdays[0] && _selectedWeekdays[6]) {
+    } else if (selectedDays.length == 2 &&
+        _selectedWeekdays[0] &&
+        _selectedWeekdays[6]) {
       return '주말';
     } else if (selectedDays.length == 1) {
       // 하나만 선택된 경우 전체 요일명 사용
@@ -505,21 +652,125 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     }
   }
 
-  // 루틴 저장 메서드 추가
-  void _saveRoutine() {
-    final selectedDays = _getSelectedWeekdaysText();
-    print('루틴 저장: ${_formatTime(_selectedTime)}, 알림: $_isAlarmEnabled, 요일: $selectedDays');
+  // 루틴 저장 메서드
+  Future<void> _saveRoutine() async {
+    if (_isSaving) return;
 
-    // 저장 후 이전 페이지로 돌아가기
-    context.go('/');
+    // 입력 검증
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      _showErrorMessage('루틴 이름을 입력해주세요.');
+      return;
+    }
 
-    // 또는 성공 메시지 표시
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('루틴이 저장되었습니다!'),
-        backgroundColor: Color(0xFF4CAF50),
-        duration: Duration(seconds: 2),
-      ),
+    final selectedDays = _getSelectedWeekdayIndices();
+    if (selectedDays.isEmpty) {
+      _showErrorMessage('요일을 선택해주세요.');
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // Riverpod로 루틴 저장
+      final success = await ref.read(routinesProvider.notifier).createRoutine(
+        name: name,
+        selectedWeekdays: selectedDays,
+        startTime: _selectedTime,
+        isAlarmEnabled: _isAlarmEnabled,
+      );
+
+      if (success) {
+        if (mounted) {
+          // 성공 메시지 표시
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('루틴이 저장되었습니다!'),
+              backgroundColor: Color(0xFF4CAF50),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          
+          // 이전 페이지로 돌아가기
+          context.go('/');
+        }
+      } else {
+        _showErrorMessage('루틴 저장에 실패했습니다.');
+      }
+    } catch (e) {
+      _showErrorMessage('오류가 발생했습니다: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  // 오류 메시지 표시
+  void _showErrorMessage(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  // 선택된 요일의 인덱스 리스트 반환 (데이터베이스 저장용)
+  List<int> _getSelectedWeekdayIndices() {
+    final selectedIndices = <int>[];
+    for (int i = 0; i < _selectedWeekdays.length; i++) {
+      if (_selectedWeekdays[i]) {
+        // 0(일)요일은 7로, 1-6(월-토)는 그대로 변환
+        selectedIndices.add(i == 0 ? 7 : i);
+      }
+    }
+    return selectedIndices;
+  }
+
+  // 요일별 시간 설정 화면 열기
+  Future<void> _openWeekdaySchedule() async {
+    final selectedDays = _getSelectedWeekdayIndices();
+    if (selectedDays.isEmpty) {
+      _showErrorMessage('먼저 요일을 선택해주세요.');
+      return;
+    }
+
+    final result = await context.pushNamed(
+      'weekday-schedule',
+      extra: {
+        'selectedWeekdays': selectedDays,
+        'defaultTime': _selectedTime,
+      },
     );
+
+    // 요일별 설정에서 반환된 데이터 처리
+    if (result != null && result is Map<int, DateTime>) {
+      setState(() {
+        _weekdayTimes = result;
+      });
+      
+      // 성공 메시지 표시
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('요일별 시간이 설정되었습니다!'),
+          backgroundColor: Color(0xFF4CAF50),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 }

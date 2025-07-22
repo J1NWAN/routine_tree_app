@@ -22,7 +22,7 @@ class RoutinesNotifier extends StateNotifier<List<Routine>> {
     state = DatabaseService.getAllRoutines();
   }
 
-  // 새 루틴 추가
+  // 새 루틴 추가 (기존)
   Future<void> addRoutine({
     required String title,
     String description = '',
@@ -46,10 +46,51 @@ class RoutinesNotifier extends StateNotifier<List<Routine>> {
     _loadRoutines();
   }
 
+  // 루틴 등록 화면용 새 루틴 추가
+  Future<bool> createRoutine({
+    required String name,
+    required List<int> selectedWeekdays,
+    required DateTime startTime,
+    required bool isAlarmEnabled,
+  }) async {
+    try {
+      if (name.trim().isEmpty || selectedWeekdays.isEmpty) {
+        return false;
+      }
+
+      final routine = Routine(
+        id: _uuid.v4(),
+        title: name.trim(),
+        description: '',
+        emoji: '🌱',
+        createdAt: DateTime.now(),
+        type: RoutineType.custom,
+        weekdays: selectedWeekdays,
+        reminderTime: isAlarmEnabled ? startTime : null,
+      );
+
+      await DatabaseService.saveRoutine(routine);
+      _loadRoutines();
+      return true;
+    } catch (e) {
+      print('루틴 저장 실패: $e');
+      return false;
+    }
+  }
+
   // 루틴 수정
   Future<void> updateRoutine(Routine routine) async {
     await DatabaseService.saveRoutine(routine);
     _loadRoutines();
+  }
+
+  // 루틴 ID로 조회
+  Routine? getRoutineById(String id) {
+    try {
+      return state.firstWhere((routine) => routine.id == id);
+    } catch (e) {
+      return null;
+    }
   }
 
   // 루틴 삭제

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:routine_tree_app/screens/routine_screen.dart';
+import 'package:routine_tree_app/screens/weekday_schedule_screen.dart';
 
 import '../screens/main_screen.dart';
 import '../screens/home_screen.dart';
@@ -83,6 +84,23 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: 'routine',
         pageBuilder: (context, state) {
           return const SlideFromBottomPage(child: RoutineScreen());
+        },
+      ),
+      // 요일별 시간 설정 페이지
+      GoRoute(
+        path: '/weekday-schedule',
+        name: 'weekday-schedule',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final selectedWeekdays = extra?['selectedWeekdays'] as List<int>? ?? [];
+          final defaultTime = extra?['defaultTime'] as DateTime? ?? DateTime.now();
+          
+          return SlideFromBottomPage(
+            child: WeekdayScheduleScreen(
+              selectedWeekdays: selectedWeekdays,
+              defaultTime: defaultTime,
+            ),
+          );
         },
       ),
     ],
