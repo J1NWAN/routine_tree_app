@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart'; // Cupertino 위젯 사용을 위해 추가
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/routine_provider.dart';
-import 'dart:math' as math;
+import '../constants/app_colors.dart';
+import '../constants/weekdays.dart';
+import '../constants/dimensions.dart';
+import '../utils/date_formatter.dart';
+import '../utils/weekday_helper.dart';
+import '../widgets/common/custom_toggle_switch.dart';
+import '../widgets/common/primary_button.dart';
+import '../widgets/common/error_snackbar.dart';
 
 class RoutineScreen extends ConsumerStatefulWidget {
   const RoutineScreen({super.key});
@@ -31,19 +38,6 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     false,
   ];
 
-  // 요일 이름 (축약형)
-  final List<String> _weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
-
-  // 요일 이름 (전체형)
-  final List<String> _fullWeekdayNames = [
-    '일요일',
-    '월요일',
-    '화요일',
-    '수요일',
-    '목요일',
-    '금요일',
-    '토요일',
-  ];
 
   // 알림 토글 시 순차적 애니메이션 처리
   void _toggleAlarm() {
@@ -67,15 +61,6 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     });
   }
 
-  // 선택된 시간을 한국어 형식으로 변환하는 메서드
-  String _formatTime(DateTime time) {
-    final hour = time.hour;
-    final minute = time.minute;
-    final period = hour < 12 ? '오전' : '오후';
-    final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-
-    return '$period ${displayHour.toString()}:${minute.toString().padLeft(2, '0')}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,13 +116,8 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                   ),
                                   height: 100,
                                   decoration: BoxDecoration(
-                                    color: const Color.fromRGBO(
-                                      235,
-                                      235,
-                                      235,
-                                      1.0,
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
+                                    color: AppColors.background,
+                                    borderRadius: BorderRadius.circular(Dimensions.mediumRadius),
                                   ),
                                   child: Column(
                                     children: [
@@ -153,7 +133,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                             ),
                                           ),
                                           Text(
-                                            _getSelectedWeekdaysText(),
+                                            WeekdayHelper.getSelectedWeekdaysText(_selectedWeekdays),
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
@@ -185,39 +165,23 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                                   shape: BoxShape.circle,
                                                   color:
                                                       _selectedWeekdays[index]
-                                                          ? const Color.fromRGBO(
-                                                            61,
-                                                            65,
-                                                            75,
-                                                            1,
-                                                          )
+                                                          ? AppColors.primary
                                                           : Colors.white,
                                                   border: Border.all(
                                                     color:
                                                         _selectedWeekdays[index]
-                                                            ? const Color.fromRGBO(
-                                                              61,
-                                                              65,
-                                                              75,
-                                                              1,
-                                                            )
-                                                            : Colors.grey
-                                                                .withOpacity(
-                                                                  0.5,
-                                                                ),
+                                                            ? AppColors.primary
+                                                            : AppColors.greyWithAlpha(0.5),
                                                   ),
                                                 ),
                                                 child: Center(
                                                   child: Text(
-                                                    _weekdayNames[index],
+                                                    Weekdays.shortNames[index],
                                                     style: TextStyle(
                                                       color:
                                                           _selectedWeekdays[index]
                                                               ? Colors.white
-                                                              : Colors.grey
-                                                                  .withOpacity(
-                                                                    0.8,
-                                                                  ),
+                                                              : AppColors.greyWithAlpha(0.8),
                                                       fontSize: 14,
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -256,12 +220,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                           ? 320
                                           : 100, // 1단계: 컨테이너 크기 변경
                                   decoration: BoxDecoration(
-                                    color: const Color.fromRGBO(
-                                      235,
-                                      235,
-                                      235,
-                                      1.0,
-                                    ),
+                                    color: AppColors.background,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Column(
@@ -294,7 +253,10 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                       Row(
                                         children: [
                                           Expanded(
-                                            child: _buildAlarmToggleSwitch(),
+                                            child: CustomToggleSwitch(
+                                              isEnabled: _isAlarmEnabled,
+                                              onToggle: _toggleAlarm,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -348,7 +310,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                                               width: 6,
                                                             ),
                                                             Text(
-                                                              _formatTime(
+                                                              DateFormatter.formatTime(
                                                                 _selectedTime,
                                                               ),
                                                               style: const TextStyle(
@@ -411,19 +373,13 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                                   width: 80,
                                                   height: 30,
                                                   decoration: BoxDecoration(
-                                                    color: const Color.fromRGBO(
-                                                      235,
-                                                      235,
-                                                      235,
-                                                      1.0,
-                                                    ),
+                                                    color: AppColors.background,
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           15,
                                                         ),
                                                     border: Border.all(
-                                                      color: Colors.grey
-                                                          .withOpacity(0.3),
+                                                      color: AppColors.greyWithAlpha(0.3),
                                                     ),
                                                   ),
                                                   child: Center(
@@ -464,36 +420,10 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                   ),
                   child: SafeArea(
                     top: false,
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isSaving ? null : _saveRoutine,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color.fromRGBO(61, 65, 75, 1),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                '완료',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
+                    child: PrimaryButton(
+                      onPressed: _isSaving ? null : _saveRoutine,
+                      text: '완료',
+                      isLoading: _isSaving,
                     ),
                   ),
                 ),
@@ -505,152 +435,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     );
   }
 
-  // 커스텀 애니메이션 토글 스위치 (크기 비례 조정)
-  Widget _buildAlarmToggleSwitch() {
-    return GestureDetector(
-      onTap: _toggleAlarm, // 순차적 애니메이션 메서드 호출
-      child: Container(
-        height: 35,
-        decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final toggleWidth =
-                (constraints.maxWidth - 6) / 2; // 전체 너비의 절반에서 여백 제외
 
-            return Stack(
-              children: [
-                // 배경 컨테이너
-                Container(
-                  width: double.infinity,
-                  height: 35,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: Row(
-                    children: [
-                      // 왼쪽 아이콘 (알림)
-                      Expanded(
-                        child: Center(
-                          child: Icon(
-                            Icons.access_time_rounded,
-                            color:
-                                _isAlarmEnabled
-                                    ? Colors.white.withOpacity(0.9)
-                                    : Colors.grey.withOpacity(0.5),
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      // 오른쪽 아이콘 (알림 끄기)
-                      Expanded(
-                        child: Center(
-                          child: Icon(
-                            Icons.notifications_off_rounded,
-                            color:
-                                !_isAlarmEnabled
-                                    ? Colors.white.withOpacity(0.9)
-                                    : Colors.grey.withOpacity(0.5),
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // 애니메이션 토글 버튼 (동적 크기)
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.elasticOut,
-                  left: _isAlarmEnabled ? 3 : null,
-                  right: _isAlarmEnabled ? null : 3,
-                  top: 3,
-                  bottom: 3,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.elasticOut,
-                    width: toggleWidth, // 동적 너비
-                    decoration: BoxDecoration(
-                      color: Color.fromRGBO(61, 65, 75, 1),
-                      borderRadius: BorderRadius.circular(19), // 높이에 맞춰 조정
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (
-                          Widget child,
-                          Animation<double> animation,
-                        ) {
-                          return ScaleTransition(
-                            scale: animation,
-                            child: child,
-                          );
-                        },
-                        child: Icon(
-                          _isAlarmEnabled
-                              ? Icons.access_time_rounded
-                              : Icons.notifications_off_rounded,
-                          key: ValueKey(_isAlarmEnabled),
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  // 선택된 요일들을 텍스트로 변환하는 메서드
-  String _getSelectedWeekdaysText() {
-    final selectedDays = <String>[];
-    final selectedFullDays = <String>[];
-
-    for (int i = 0; i < _selectedWeekdays.length; i++) {
-      if (_selectedWeekdays[i]) {
-        selectedDays.add(_weekdayNames[i]);
-        selectedFullDays.add(_fullWeekdayNames[i]);
-      }
-    }
-
-    if (selectedDays.isEmpty) {
-      return '요일을 선택해주세요.';
-    } else if (selectedDays.length == 7) {
-      return '매일';
-    } else if (selectedDays.length == 5 &&
-        _selectedWeekdays[1] &&
-        _selectedWeekdays[2] &&
-        _selectedWeekdays[3] &&
-        _selectedWeekdays[4] &&
-        _selectedWeekdays[5]) {
-      return '평일';
-    } else if (selectedDays.length == 2 &&
-        _selectedWeekdays[0] &&
-        _selectedWeekdays[6]) {
-      return '주말';
-    } else if (selectedDays.length == 1) {
-      // 하나만 선택된 경우 전체 요일명 사용
-      return selectedFullDays.first;
-    } else {
-      // 두 개 이상 선택된 경우 축약형 사용
-      return selectedDays.join(', ');
-    }
-  }
 
   // 루틴 저장 메서드
   Future<void> _saveRoutine() async {
@@ -659,13 +444,13 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     // 입력 검증
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      _showErrorMessage('루틴 이름을 입력해주세요.');
+      ErrorSnackbar.show(context, '루틴 이름을 입력해주세요.');
       return;
     }
 
-    final selectedDays = _getSelectedWeekdayIndices();
+    final selectedDays = WeekdayHelper.getSelectedWeekdayIndices(_selectedWeekdays);
     if (selectedDays.isEmpty) {
-      _showErrorMessage('요일을 선택해주세요.');
+      ErrorSnackbar.show(context, '요일을 선택해주세요.');
       return;
     }
 
@@ -697,10 +482,10 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
           context.go('/');
         }
       } else {
-        _showErrorMessage('루틴 저장에 실패했습니다.');
+        ErrorSnackbar.show(context, '루틴 저장에 실패했습니다.');
       }
     } catch (e) {
-      _showErrorMessage('오류가 발생했습니다: ${e.toString()}');
+      ErrorSnackbar.show(context, '오류가 발생했습니다: ${e.toString()}');
     } finally {
       if (mounted) {
         setState(() {
@@ -710,36 +495,13 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     }
   }
 
-  // 오류 메시지 표시
-  void _showErrorMessage(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
 
-  // 선택된 요일의 인덱스 리스트 반환 (데이터베이스 저장용)
-  List<int> _getSelectedWeekdayIndices() {
-    final selectedIndices = <int>[];
-    for (int i = 0; i < _selectedWeekdays.length; i++) {
-      if (_selectedWeekdays[i]) {
-        // 0(일)요일은 7로, 1-6(월-토)는 그대로 변환
-        selectedIndices.add(i == 0 ? 7 : i);
-      }
-    }
-    return selectedIndices;
-  }
 
   // 요일별 시간 설정 화면 열기
   Future<void> _openWeekdaySchedule() async {
-    final selectedDays = _getSelectedWeekdayIndices();
+    final selectedDays = WeekdayHelper.getSelectedWeekdayIndices(_selectedWeekdays);
     if (selectedDays.isEmpty) {
-      _showErrorMessage('먼저 요일을 선택해주세요.');
+      ErrorSnackbar.show(context, '먼저 요일을 선택해주세요.');
       return;
     }
 

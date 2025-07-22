@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../constants/app_colors.dart';
+import '../constants/weekdays.dart';
+import '../constants/dimensions.dart';
+import '../utils/date_formatter.dart';
+import '../widgets/common/time_picker_modal.dart';
+import '../helpers/ui_helper.dart';
 
 class WeekdayScheduleScreen extends ConsumerStatefulWidget {
   final List<int> selectedWeekdays;
@@ -21,15 +27,6 @@ class WeekdayScheduleScreen extends ConsumerStatefulWidget {
 class _WeekdayScheduleScreenState extends ConsumerState<WeekdayScheduleScreen> {
   late Map<int, DateTime> weekdayTimes;
 
-  final List<String> _fullWeekdayNames = [
-    '일요일',
-    '월요일',
-    '화요일',
-    '수요일',
-    '목요일',
-    '금요일',
-    '토요일',
-  ];
 
   @override
   void initState() {
@@ -43,207 +40,36 @@ class _WeekdayScheduleScreenState extends ConsumerState<WeekdayScheduleScreen> {
     }
   }
 
-  String _formatTime(DateTime time) {
-    final hour = time.hour;
-    final minute = time.minute;
-    final period = hour < 12 ? '오전' : '오후';
-    final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-    return '$period ${displayHour.toString()}:${minute.toString().padLeft(2, '0')}';
-  }
 
   // 모든 요일 동일하게 시간 설정
-  void _showAllWeekdaysTimePicker() {
-    DateTime tempTime = weekdayTimes.values.first; // 임시 시간 저장
-    
-    showModalBottomSheet(
+  Future<void> _showAllWeekdaysTimePicker() async {
+    final result = await TimePickerModal.show(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.4,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Column(
-          children: [
-            // 상단 핸들
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 20),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            
-            // 제목
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                '모든 요일 시간 설정',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // 시간 선택기
-            Expanded(
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                use24hFormat: false,
-                initialDateTime: tempTime,
-                onDateTimeChanged: (DateTime newTime) {
-                  tempTime = newTime; // 임시 저장만
-                },
-              ),
-            ),
-            
-            // 완료 버튼
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: SafeArea(
-                top: false,
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // 완료 버튼 클릭 시에만 모든 요일 업데이트
-                      setState(() {
-                        for (int index in weekdayTimes.keys) {
-                          weekdayTimes[index] = tempTime;
-                        }
-                      });
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromRGBO(61, 65, 75, 1),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      '완료',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      initialTime: weekdayTimes.values.first,
+      title: '모든 요일 시간 설정',
     );
+    
+    if (result != null) {
+      setState(() {
+        for (int index in weekdayTimes.keys) {
+          weekdayTimes[index] = result;
+        }
+      });
+    }
   }
 
-  void _showTimePicker(int weekdayIndex) {
-    DateTime tempTime = weekdayTimes[weekdayIndex] ?? widget.defaultTime; // 임시 시간 저장
-    
-    showModalBottomSheet(
+  Future<void> _showTimePicker(int weekdayIndex) async {
+    final result = await TimePickerModal.show(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.4,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Column(
-          children: [
-            // 상단 핸들
-            Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 20),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade400,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            
-            // 제목
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                _fullWeekdayNames[weekdayIndex],
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // 시간 선택기
-            Expanded(
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                use24hFormat: false,
-                initialDateTime: tempTime,
-                onDateTimeChanged: (DateTime newTime) {
-                  tempTime = newTime; // 임시 저장만
-                },
-              ),
-            ),
-            
-            // 완료 버튼
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: SafeArea(
-                top: false,
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // 완료 버튼 클릭 시에만 해당 요일 업데이트
-                      setState(() {
-                        weekdayTimes[weekdayIndex] = tempTime;
-                      });
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromRGBO(61, 65, 75, 1),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      '완료',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      initialTime: weekdayTimes[weekdayIndex] ?? widget.defaultTime,
+      title: Weekdays.fullNames[weekdayIndex],
     );
+    
+    if (result != null) {
+      setState(() {
+        weekdayTimes[weekdayIndex] = result;
+      });
+    }
   }
 
   @override
@@ -275,7 +101,7 @@ class _WeekdayScheduleScreenState extends ConsumerState<WeekdayScheduleScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color.fromRGBO(61, 65, 75, 1),
+                color: AppColors.primary,
               ),
             ),
           ),
@@ -337,16 +163,16 @@ class _WeekdayScheduleScreenState extends ConsumerState<WeekdayScheduleScreen> {
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                     title: Text(
-                      _fullWeekdayNames[weekdayIndex],
+                      Weekdays.fullNames[weekdayIndex],
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: AppColors.black87,
                       ),
                     ),
 
                     trailing: Text(
-                      _formatTime(weekdayTimes[weekdayIndex]!),
+                      DateFormatter.formatTime(weekdayTimes[weekdayIndex]!),
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade600,
@@ -398,7 +224,7 @@ class _WeekdayScheduleScreenState extends ConsumerState<WeekdayScheduleScreen> {
                               ),
                             ),
                             child: const Text(
-                              '모든 요일\n동일하게',
+                              '모든 요일 동일하게',
                               style: TextStyle(fontSize: 12),
                               textAlign: TextAlign.center,
                             ),
