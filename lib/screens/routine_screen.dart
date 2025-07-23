@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../providers/routine_provider.dart';
+import '../notifiers/routine_notifier.dart';
 import '../constants/app_colors.dart';
 import '../constants/weekdays.dart';
 import '../constants/dimensions.dart';
@@ -38,7 +38,6 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     false,
   ];
 
-
   // 알림 토글 시 순차적 애니메이션 처리
   void _toggleAlarm() {
     setState(() {
@@ -60,7 +59,6 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
       }
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +115,9 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                   height: 100,
                                   decoration: BoxDecoration(
                                     color: AppColors.background,
-                                    borderRadius: BorderRadius.circular(Dimensions.mediumRadius),
+                                    borderRadius: BorderRadius.circular(
+                                      Dimensions.mediumRadius,
+                                    ),
                                   ),
                                   child: Column(
                                     children: [
@@ -133,7 +133,9 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                             ),
                                           ),
                                           Text(
-                                            WeekdayHelper.getSelectedWeekdaysText(_selectedWeekdays),
+                                            WeekdayHelper.getSelectedWeekdaysText(
+                                              _selectedWeekdays,
+                                            ),
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
@@ -171,7 +173,9 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                                     color:
                                                         _selectedWeekdays[index]
                                                             ? AppColors.primary
-                                                            : AppColors.greyWithAlpha(0.5),
+                                                            : AppColors.greyWithAlpha(
+                                                              0.5,
+                                                            ),
                                                   ),
                                                 ),
                                                 child: Center(
@@ -181,7 +185,9 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                                       color:
                                                           _selectedWeekdays[index]
                                                               ? Colors.white
-                                                              : AppColors.greyWithAlpha(0.8),
+                                                              : AppColors.greyWithAlpha(
+                                                                0.8,
+                                                              ),
                                                       fontSize: 14,
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -379,7 +385,10 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                                                           15,
                                                         ),
                                                     border: Border.all(
-                                                      color: AppColors.greyWithAlpha(0.3),
+                                                      color:
+                                                          AppColors.greyWithAlpha(
+                                                            0.3,
+                                                          ),
                                                     ),
                                                   ),
                                                   child: Center(
@@ -435,8 +444,6 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     );
   }
 
-
-
   // 루틴 저장 메서드
   Future<void> _saveRoutine() async {
     if (_isSaving) return;
@@ -448,7 +455,9 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
       return;
     }
 
-    final selectedDays = WeekdayHelper.getSelectedWeekdayIndices(_selectedWeekdays);
+    final selectedDays = WeekdayHelper.getSelectedWeekdayIndices(
+      _selectedWeekdays,
+    );
     if (selectedDays.isEmpty) {
       ErrorSnackbar.show(context, '요일을 선택해주세요.');
       return;
@@ -459,30 +468,30 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     });
 
     try {
-      // Riverpod로 루틴 저장
-      final success = await ref.read(routinesProvider.notifier).createRoutine(
-        name: name,
-        selectedWeekdays: selectedDays,
-        startTime: _selectedTime,
-        isAlarmEnabled: _isAlarmEnabled,
-      );
-
-      if (success) {
-        if (mounted) {
-          // 성공 메시지 표시
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('루틴이 저장되었습니다!'),
-              backgroundColor: Color(0xFF4CAF50),
-              duration: Duration(seconds: 2),
-            ),
+      // 새로운 routineNotifierProvider로 루틴 저장
+      await ref
+          .read(routineNotifierProvider.notifier)
+          .createRoutine(
+            title: name,
+            weekdays: selectedDays,
+            reminderTime: _isAlarmEnabled ? _selectedTime : null,
           );
-          
-          // 이전 페이지로 돌아가기
-          context.go('/');
-        }
-      } else {
-        ErrorSnackbar.show(context, '루틴 저장에 실패했습니다.');
+
+      // 성공으로 처리
+      final success = true;
+
+      if (success && mounted) {
+        // 성공 메시지 표시
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('루틴이 저장되었습니다!'),
+            backgroundColor: Color(0xFF4CAF50),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // 이전 페이지로 돌아가기
+        context.go('/');
       }
     } catch (e) {
       ErrorSnackbar.show(context, '오류가 발생했습니다: ${e.toString()}');
@@ -495,11 +504,11 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     }
   }
 
-
-
   // 요일별 시간 설정 화면 열기
   Future<void> _openWeekdaySchedule() async {
-    final selectedDays = WeekdayHelper.getSelectedWeekdayIndices(_selectedWeekdays);
+    final selectedDays = WeekdayHelper.getSelectedWeekdayIndices(
+      _selectedWeekdays,
+    );
     if (selectedDays.isEmpty) {
       ErrorSnackbar.show(context, '먼저 요일을 선택해주세요.');
       return;
@@ -507,10 +516,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
 
     final result = await context.pushNamed(
       'weekday-schedule',
-      extra: {
-        'selectedWeekdays': selectedDays,
-        'defaultTime': _selectedTime,
-      },
+      extra: {'selectedWeekdays': selectedDays, 'defaultTime': _selectedTime},
     );
 
     // 요일별 설정에서 반환된 데이터 처리
@@ -518,7 +524,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
       setState(() {
         _weekdayTimes = result;
       });
-      
+
       // 성공 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
