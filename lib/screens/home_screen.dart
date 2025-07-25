@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../providers/routine_provider.dart';
+import '../notifiers/routine_notifier.dart';
 import '../widgets/calendar_widget.dart';
 import '../widgets/routine_schedule_card.dart';
 
@@ -18,8 +18,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final routines = ref.watch(routinesProvider);
-    final todayRoutines = ref.read(routinesProvider.notifier).getTodayRoutines();
+    final routinesAsync = ref.watch(routinesNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -33,7 +32,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.refresh(routinesProvider);
+          ref.refresh(routinesNotifierProvider);
         },
         child: SingleChildScrollView(
           child: Container(
@@ -53,9 +52,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 const SizedBox(height: 8),
 
-                // 루틴 리스트
-                //if (todayRoutines.isEmpty) _buildEmptyState() else _buildRoutineList(todayRoutines),
-                _buildEmptyState(),
+                // 여기다가 routinesAsync으로 가져온 데이터를 예시로 뿌려주는 위젯 간단하게 만들어줘
+                routinesAsync.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (error, stack) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.error, color: Colors.red, size: 48),
+                          const SizedBox(height: 8),
+                          Text('오류가 발생했습니다: $error'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  data: (routines) => routines.isEmpty
+                      ? _buildEmptyState()
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                              child: Row(
+                                children: [
+                                  Text('내 루틴 목록', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                        color: const Color(0xFF4CAF50).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                                    child: Text('${routines.length}개',
+                                        style: const TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold, fontSize: 12)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // 루틴 카드들
+                            ...routines.map((routine) => RoutineScheduleCard(routine: routine, selectedDate: _selectedDate)),
+                          ],
+                        ),
+                ),
 
                 const SizedBox(height: 100), // 바텀 네비게이션 여백
               ],
@@ -87,33 +129,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  Widget _buildRoutineList(List routines) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: Row(
-            children: [
-              Text('오늘의 루틴', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87)),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFF4CAF50).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                child: Text(
-                  '${routines.length}',
-                  style: const TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // 루틴 카드들
-        ...routines.map((routine) => RoutineScheduleCard(routine: routine, selectedDate: _selectedDate)),
-      ],
-    );
-  }
-
 }

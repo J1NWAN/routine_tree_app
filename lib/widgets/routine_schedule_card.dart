@@ -1,100 +1,106 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/adapters.dart';
 import '../models/routine.dart';
-import '../providers/routine_provider.dart';
 
-class RoutineScheduleCard extends ConsumerWidget {
+class RoutineScheduleCard extends StatelessWidget {
   final Routine routine;
   final DateTime selectedDate;
 
   const RoutineScheduleCard({super.key, required this.routine, required this.selectedDate});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final recordsNotifier = ref.watch(routineRecordsProvider(routine.id).notifier);
-    final isCompleted = recordsNotifier.isCompletedToday;
-
+  Widget build(BuildContext context) {
     // 가상의 시간 (실제로는 routine에 시간 정보가 있어야 함)
     final startTime = routine.reminderTime ?? DateTime.now();
     final endTime = startTime.add(const Duration(minutes: 30));
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      height: 120,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 완료 체크박스
-            GestureDetector(
-              onTap: () => _toggleComplete(context, ref),
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isCompleted ? const Color(0xFF4CAF50) : Colors.transparent,
-                  border: Border.all(color: isCompleted ? const Color(0xFF4CAF50) : Colors.grey[400]!, width: 2),
-                ),
-                child: isCompleted ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // 루틴 정보
-            Expanded(
+            Container(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Icon(
+                    CupertinoIcons.check_mark,
+                    color: Colors.red,
+                    size: 16,
+                  ),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(routine.emoji, style: const TextStyle(fontSize: 16)),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          routine.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isCompleted ? Colors.grey[600] : Colors.black87,
-                            decoration: isCompleted ? TextDecoration.lineThrough : null,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      Text(routine.title),
+                      InkWell(
+                          onTap: () {
+                            print('더보기 버튼 클릭!');
+                          },
+                          child: const Icon(Icons.more_horiz)),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text('${_formatTime(startTime)} - ${_formatTime(endTime)}', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                 ],
               ),
             ),
-
-            // 더보기 버튼
-            PopupMenuButton(
-              icon: const Icon(Icons.more_horiz, color: Colors.grey),
-              itemBuilder:
-                  (context) => [
-                    PopupMenuItem(
-                      child: const Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('수정')]),
-                      onTap: () {
-                        // TODO: 루틴 수정
-                      },
-                    ),
-                    PopupMenuItem(
-                      child: const Row(
-                        children: [
-                          Icon(Icons.delete, size: 18, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('삭제', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                      onTap: () {
-                        // TODO: 루틴 삭제 확인
-                      },
-                    ),
-                  ],
+            Row(
+              children: [
+                Text(
+                  _formatTime(startTime),
+                  style: const TextStyle(fontSize: 12),
+                ),
+                const Text(' - '),
+                Text(
+                  _formatTime(endTime),
+                  style: const TextStyle(fontSize: 12),
+                ),
+                Container(
+                  margin: const EdgeInsets.only(left: 5),
+                  child: const Icon(
+                    Icons.notifications_off_outlined,
+                    size: 14,
+                  ),
+                )
+              ],
             ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Wrap(
+                  spacing: 2,
+                  children: routine.weekdays.map((day) {
+                    final dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+
+                    return Container(
+                      width: 20,
+                      height: 20,
+                      decoration: const BoxDecoration(
+                        color: Colors.black,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          dayNames[day - 1],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            )
           ],
         ),
       ),
@@ -102,33 +108,6 @@ class RoutineScheduleCard extends ConsumerWidget {
   }
 
   String _formatTime(DateTime time) {
-    final hour = time.hour;
-    final minute = time.minute;
-    final period = hour < 12 ? '오전' : '오후';
-    final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-
-    return '$period $displayHour:${minute.toString().padLeft(2, '0')}';
-  }
-
-  void _toggleComplete(BuildContext context, WidgetRef ref) async {
-    final recordsNotifier = ref.read(routineRecordsProvider(routine.id).notifier);
-
-    if (recordsNotifier.isCompletedToday) {
-      await recordsNotifier.undoToday();
-    } else {
-      final success = await recordsNotifier.completeToday();
-      if (success && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${routine.title} 완료! 🎉'),
-            backgroundColor: const Color(0xFF4CAF50),
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      }
-    }
-
-    // 상태 새로고침
-    ref.refresh(routinesProvider);
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 }
