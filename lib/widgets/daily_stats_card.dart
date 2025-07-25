@@ -1,65 +1,83 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/routine_provider.dart';
+import '../notifiers/routine_notifier.dart';
 
 class DailyStatsCard extends ConsumerWidget {
   const DailyStatsCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final routines = ref.watch(routinesProvider);
-    final todayRoutines = ref.read(routinesProvider.notifier).getTodayRoutines();
-
-    int completedCount = 0;
-    for (final routine in todayRoutines) {
-      final recordsNotifier = ref.read(routineRecordsProvider(routine.id).notifier);
-      if (recordsNotifier.isCompletedToday) {
-        completedCount++;
-      }
-    }
-
-    final totalCount = todayRoutines.length;
-    final progress = totalCount > 0 ? completedCount / totalCount : 0.0;
-
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.today, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text('오늘의 진행상황', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final routinesAsync = ref.watch(routinesNotifierProvider);
+    
+    return routinesAsync.when(
+      data: (routines) {
+        final activeRoutines = routines.where((r) => r.isActive).length;
+        final todayRoutines = routines.where((r) => r.shouldExecuteToday()).length;
+        
+        return Card(
+          margin: const EdgeInsets.all(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$completedCount / $totalCount 완료',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  '오늘의 루틴 현황',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                Text(
-                  '${(progress * 100).toInt()}%',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildStatItem(context, '전체 루틴', '$activeRoutines개', Icons.list_alt),
+                    _buildStatItem(context, '오늘 루틴', '$todayRoutines개', Icons.today),
+                    _buildStatItem(context, '진행률', '${todayRoutines > 0 ? (todayRoutines * 100 / activeRoutines).round() : 0}%', Icons.trending_up),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[300],
-              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
-            ),
-          ],
+          ),
+        );
+      },
+      loading: () => const Card(
+        margin: EdgeInsets.all(16),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(child: CircularProgressIndicator()),
         ),
       ),
+      error: (error, stack) => Card(
+        margin: const EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text('통계 로드 중 오류가 발생했습니다: $error'),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(BuildContext context, String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, size: 24, color: Theme.of(context).primaryColor),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -468,13 +468,14 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     });
 
     try {
-      // 새로운 routineNotifierProvider로 루틴 저장
+      // 새로운 routinesNotifierProvider로 루틴 저장
       await ref
-          .read(routineNotifierProvider.notifier)
-          .createRoutine(
-            title: name,
-            weekdays: selectedDays,
-            reminderTime: _isAlarmEnabled ? _selectedTime : null,
+          .read(routinesNotifierProvider.notifier)
+          .createRoutineFromScreen(
+            name: name,
+            selectedWeekdays: selectedDays,
+            startTime: _selectedTime,
+            isAlarmEnabled: _isAlarmEnabled,
           );
 
       // 성공으로 처리
