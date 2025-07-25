@@ -71,7 +71,7 @@ coverage/
 *.dSYM/
 
 # Generated files (uncomment if you want to exclude generated files)
-# *.g.dart
+*.g.dart
 *.freezed.dart
 *.gr.dart
 
@@ -82,3 +82,11 @@ coverage/
 # Log files
 logs/
 *.log
+
+# Build configuration files
+build.yaml
+
+# Personal notes and temporary files
+note-*.md
+notes/
+*.md.tmp

@@ -1,66 +1,25 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/routine.dart';
 import '../services/routine_service.dart';
 
+part 'routine_notifier.g.dart';
+
 /// RoutineService의 싱글톤 인스턴스를 제공하는 Provider
-final routineServiceProvider = Provider<RoutineService>((ref) {
+@riverpod
+RoutineService routineService(ref) {
   return RoutineService();
-});
+}
 
-/// 루틴 상태를 관리하는 StateNotifierProvider
+/// 루틴 상태를 관리하는 AsyncNotifier
 /// AsyncValue를 사용하여 로딩, 에러, 데이터 상태를 처리합니다
-final routineNotifierProvider =
-    StateNotifierProvider<RoutineNotifier, AsyncValue<List<Routine>>>((ref) {
-      return RoutineNotifier(ref.read(routineServiceProvider));
-    });
+@riverpod
+class RoutinesNotifier extends _$RoutinesNotifier {
+  late final RoutineService _routineService;
 
-/// 오늘 실행해야 하는 루틴들을 반환하는 Provider
-final todayRoutinesProvider = Provider<List<Routine>>((ref) {
-  final routinesAsync = ref.watch(routineNotifierProvider);
-  return routinesAsync.when(
-    data:
-        (routines) =>
-            routines.where((routine) => routine.shouldExecuteToday()).toList(),
-    loading: () => [],
-    error: (_, __) => [],
-  );
-});
-
-/// 활성화된 모든 루틴들을 반환하는 Provider
-final activeRoutinesProvider = Provider<List<Routine>>((ref) {
-  final routinesAsync = ref.watch(routineNotifierProvider);
-  return routinesAsync.when(
-    data: (routines) => routines.where((routine) => routine.isActive).toList(),
-    loading: () => [],
-    error: (_, __) => [],
-  );
-});
-
-/// 특정 ID의 루틴을 찾아 반환하는 Provider (Family)
-final routineByIdProvider = Provider.family<Routine?, String>((ref, id) {
-  final routinesAsync = ref.watch(routineNotifierProvider);
-  return routinesAsync.when(
-    data: (routines) {
-      try {
-        return routines.firstWhere((routine) => routine.id == id);
-      } catch (e) {
-        return null;
-      }
-    },
-    loading: () => null,
-    error: (_, __) => null,
-  );
-});
-
-/// 루틴 목록의 상태를 관리하는 StateNotifier
-/// UI에서 루틴 CRUD 작업을 수행할 때 사용됩니다
-class RoutineNotifier extends StateNotifier<AsyncValue<List<Routine>>> {
-  /// 루틴 비즈니스 로직을 처리하는 서비스
-  final RoutineService _routineService;
-
-  /// 생성자에서 초기 로딩 상태로 설정하고 데이터를 로드합니다
-  RoutineNotifier(this._routineService) : super(const AsyncValue.loading()) {
-    loadRoutines();
+  @override
+  Future<List<Routine>> build() async {
+    _routineService = ref.read(routineServiceProvider);
+    return await _routineService.getAllRoutines();
   }
 
   /// 모든 루틴을 다시 로드합니다
@@ -118,4 +77,104 @@ class RoutineNotifier extends StateNotifier<AsyncValue<List<Routine>>> {
     await _routineService.toggleRoutineActive(routineId);
     await loadRoutines(); // 상태 새로고침
   }
+
+  /// 루틴 등록 화면용 새 루틴 추가
+  Future<bool> createRoutineFromScreen({
+    required String name,
+    required List<int> selectedWeekdays,
+    required DateTime startTime,
+    required bool isAlarmEnabled,
+  }) async {
+    try {
+      if (name.trim().isEmpty || selectedWeekdays.isEmpty) {
+        return false;
+      }
+
+      await createRoutine(
+        title: name.trim(),
+        description: '',
+        emoji: '🌱',
+        type: RoutineType.custom,
+        weekdays: selectedWeekdays,
+        reminderTime: isAlarmEnabled ? startTime : null,
+      );
+      
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// 오늘 해야 할 루틴들을 반환하는 헬퍼 메서드
+  List<Routine> getTodayRoutines() {
+    return state.when(
+      data: (routines) => routines.where((routine) => routine.shouldExecuteToday()).toList(),
+      loading: () => [],
+      error: (_, __) => [],
+    );
+  }
+
+  /// 활성화된 모든 루틴들을 반환하는 헬퍼 메서드
+  List<Routine> getActiveRoutines() {
+    return state.when(
+      data: (routines) => routines.where((routine) => routine.isActive).toList(),
+      loading: () => [],
+      error: (_, __) => [],
+    );
+  }
+
+  /// 루틴 ID로 조회하는 헬퍼 메서드
+  Routine? getRoutineById(String id) {
+    return state.when(
+      data: (routines) {
+        try {
+          return routines.firstWhere((routine) => routine.id == id);
+        } catch (e) {
+          return null;
+        }
+      },
+      loading: () => null,
+      error: (_, __) => null,
+    );
+  }
+}
+
+/// 오늘 실행해야 하는 루틴들을 반환하는 Provider
+@riverpod
+List<Routine> todayRoutines(ref) {
+  final routinesAsync = ref.watch(routinesNotifierProvider);
+  return routinesAsync.when(
+    data: (routines) =>
+        routines.where((routine) => routine.shouldExecuteToday()).toList(),
+    loading: () => [],
+    error: (_, __) => [],
+  );
+}
+
+/// 활성화된 모든 루틴들을 반환하는 Provider
+@riverpod
+List<Routine> activeRoutines(ref) {
+  final routinesAsync = ref.watch(routinesNotifierProvider);
+  return routinesAsync.when(
+    data: (routines) => routines.where((routine) => routine.isActive).toList(),
+    loading: () => [],
+    error: (_, __) => [],
+  );
+}
+
+/// 특정 ID의 루틴을 찾아 반환하는 Provider (Family)
+@riverpod
+Routine? routineById(ref, String id) {
+  final routinesAsync = ref.watch(routinesNotifierProvider);
+  return routinesAsync.when(
+    data: (routines) {
+      try {
+        return routines.firstWhere((routine) => routine.id == id);
+      } catch (e) {
+        return null;
+      }
+    },
+    loading: () => null,
+    error: (_, __) => null,
+  );
 }
