@@ -77,22 +77,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                              child: Row(
-                                children: [
-                                  Text('내 루틴 목록', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                        color: const Color(0xFF4CAF50).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                                    child: Text('${routines.length}개',
-                                        style: const TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold, fontSize: 12)),
-                                  ),
-                                ],
-                              ),
+                            const SizedBox(
+                              height: 10,
                             ),
+
                             // 루틴 카드들
                             ...routines.map((routine) => RoutineScheduleCard(routine: routine, selectedDate: _selectedDate)),
                           ],
