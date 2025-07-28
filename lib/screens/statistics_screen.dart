@@ -78,6 +78,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
             Expanded(
               child: TabBarView(
                 children: [
+                  // 월간 분석보고서 탭
                   Column(
                     children: [
                       Row(
@@ -122,7 +123,52 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                       //
                     ],
                   ),
-                  const Center(child: Text('연간 통계')),
+
+                  // 연간 분석보고서 탭
+                  Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            onPressed: _previousWeek,
+                            icon: const Icon(
+                              Icons.chevron_left,
+                              color: Colors.black,
+                              size: 20,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              // TODO: 월 선택 다이얼로그
+                              print('월 선택 다이얼로그');
+                            },
+                            child: Row(
+                              children: [
+                                Text(currentMonth, style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600)),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 20),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _nextWeek,
+                            icon: const Icon(
+                              Icons.chevron_right,
+                              color: Colors.black,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // 루틴 흐름
+                      _buildStatisticsCard(),
+                      // 기분 분포
+                      _buildStatisticsCard(),
+                      //
+                    ],
+                  ),
                 ],
               ),
             ),
