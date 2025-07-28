@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:routine_tree_app/screens/routine_detail_screen.dart';
 import 'package:routine_tree_app/screens/routine_screen.dart';
 import 'package:routine_tree_app/screens/weekday_schedule_screen.dart';
 
@@ -23,6 +24,26 @@ class SlideFromBottomPage extends CustomTransitionPage<void> {
     return SlideTransition(
       position: Tween<Offset>(
         begin: const Offset(0.0, 1.0), // 하단에서 시작
+        end: Offset.zero, // 중앙으로 이동
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+      child: child,
+    );
+  }
+}
+
+// 우측에서 왼쪽으로 슬라이드하는 페이지 클래스
+class SlideFromRightPage extends CustomTransitionPage<void> {
+  const SlideFromRightPage({required super.child, super.key}) : super(transitionsBuilder: _slideFromRightTransition);
+
+  static Widget _slideFromRightTransition(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(1.0, 0.0), // 하단에서 시작
         end: Offset.zero, // 중앙으로 이동
       ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
       child: child,
@@ -86,6 +107,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return const SlideFromBottomPage(child: RoutineScreen());
         },
       ),
+      GoRoute(
+        path: '/routine-detail',
+        name: 'routine-detail',
+        pageBuilder: (context, state) {
+          return const SlideFromRightPage(child: RoutineDetailScreen());
+        },
+      ),
       // 요일별 시간 설정 페이지
       GoRoute(
         path: '/weekday-schedule',
@@ -94,7 +122,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>?;
           final selectedWeekdays = extra?['selectedWeekdays'] as List<int>? ?? [];
           final defaultTime = extra?['defaultTime'] as DateTime? ?? DateTime.now();
-          
+
           return SlideFromBottomPage(
             child: WeekdayScheduleScreen(
               selectedWeekdays: selectedWeekdays,
