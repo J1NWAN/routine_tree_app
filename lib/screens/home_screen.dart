@@ -52,7 +52,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 const SizedBox(height: 8),
 
-                // 여기다가 routinesAsync으로 가져온 데이터를 예시로 뿌려주는 위젯 간단하게 만들어줘
                 routinesAsync.when(
                   loading: () => const Center(
                     child: Padding(
