@@ -17,7 +17,7 @@ class RoutineScheduleCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        context.go('/routine-detail');
+        context.go('/routine');
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -43,12 +43,75 @@ class RoutineScheduleCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(routine.title),
-                        InkWell(
-                            onTap: () {
-                              print('더보기 버튼 클릭!');
+                        Flexible(
+                          child: Text(
+                            routine.title,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: PopupMenuButton<String>(
+                            onSelected: (String value) {
+                              if (value == 'edit') {
+                                // TODO: 설정/수정 화면으로 이동
+                              } else if (value == 'delete') {
+                                // TODO: 삭제 확인 다이얼로그 표시
+                              }
                             },
-                            child: const Icon(Icons.more_horiz)),
+                            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                              PopupMenuItem<String>(
+                                value: 'edit',
+                                height: 36,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.settings, size: 16),
+                                      SizedBox(width: 8),
+                                      Text('설정', style: TextStyle(fontSize: 14)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'delete',
+                                height: 36,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.delete, size: 16, color: Colors.red),
+                                      SizedBox(width: 8),
+                                      Text('삭제', style: TextStyle(color: Colors.red, fontSize: 14)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                            icon: const Icon(Icons.more_horiz, size: 18),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            splashRadius: 12,
+                            // 반투명 배경 오버레이 설정
+                            color: Colors.white,
+                            elevation: 8,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            // Barrier 색상 설정 (뒤쪽 오버레이)
+                            enableFeedback: true,
+                          ),
+                        ),
                       ],
                     ),
                   ],
