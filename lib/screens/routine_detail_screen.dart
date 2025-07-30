@@ -39,16 +39,21 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.settings_outlined,
-                      size: 16,
-                      color: Colors.grey[500],
+                  GestureDetector(
+                    onTap: () {
+                      print('루틴 설정화면으로 이동');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.settings_outlined,
+                        size: 16,
+                        color: Colors.grey[500],
+                      ),
                     ),
                   )
                 ],
@@ -164,20 +169,27 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(text ?? '할 일을 추가해보세요.'),
-          GestureDetector(
-            onTap: () => _showRoutineModal(context),
-            child: Container(
-              padding: const EdgeInsets.all(5),
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.amber,
-              ),
-              child: const Icon(
-                Icons.add,
-                size: 16,
-              ),
-            ),
-          ),
+          text == null
+              ? GestureDetector(
+                  onTap: () => _showRoutineModal(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.amber,
+                    ),
+                    child: const Icon(
+                      Icons.add,
+                      size: 16,
+                    ),
+                  ),
+                )
+              : GestureDetector(
+                  onTap: () {
+                    print(text);
+                  },
+                  child: const Icon(Icons.add),
+                ),
         ],
       ),
     );
