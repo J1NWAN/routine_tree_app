@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/routine.dart';
+import '../constants/weekdays.dart';
 
 class RoutineScheduleCard extends StatelessWidget {
   final Routine routine;
@@ -56,6 +57,7 @@ class RoutineScheduleCard extends StatelessWidget {
                             onSelected: (String value) {
                               if (value == 'edit') {
                                 // TODO: 설정/수정 화면으로 이동
+                                context.go('/routine', extra: routine);
                               } else if (value == 'delete') {
                                 // TODO: 삭제 확인 다이얼로그 표시
                               }
@@ -144,8 +146,9 @@ class RoutineScheduleCard extends StatelessWidget {
                   Wrap(
                     spacing: 2,
                     children: routine.weekdays.map((day) {
-                      final dayNames = ['월', '화', '수', '목', '금', '토', '일'];
-
+                      // day는 1~7 (월~일), Weekdays.shortNames는 0~6 (일~토)
+                      // 1(월)→1, 2(화)→2, ..., 6(토)→6, 7(일)→0
+                      int weekdayIndex = day == 7 ? 0 : day;
                       return Container(
                         width: 20,
                         height: 20,
@@ -155,7 +158,7 @@ class RoutineScheduleCard extends StatelessWidget {
                         ),
                         child: Center(
                           child: Text(
-                            dayNames[day - 1],
+                            Weekdays.shortNames[weekdayIndex],
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,

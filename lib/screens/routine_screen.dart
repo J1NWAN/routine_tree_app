@@ -11,6 +11,7 @@ import '../utils/weekday_helper.dart';
 import '../widgets/common/custom_toggle_switch.dart';
 import '../widgets/common/primary_button.dart';
 import '../widgets/common/error_snackbar.dart';
+import '../models/routine.dart';
 
 class RoutineScreen extends ConsumerStatefulWidget {
   const RoutineScreen({super.key});
@@ -38,6 +39,25 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     false,
   ];
 
+  // 전달받은 routine 데이터로 초기값 설정
+  void _initializeWithRoutineData(Routine routine) {
+    _nameController.text = routine.title;
+    _selectedTime = routine.reminderTime ?? DateTime.now();
+    _isAlarmEnabled = routine.reminderTime != null;
+
+    // 요일 설정: routine.weekdays는 1~7(월~일)
+    // _selectedWeekdays는 0~6(일~토)
+    for (int routineDay in routine.weekdays) {
+      if (routineDay == 7) {
+        // 일요일: 7 -> 0
+        _selectedWeekdays[0] = true;
+      } else {
+        // 월~토: 1~6 -> 1~6
+        _selectedWeekdays[routineDay] = true;
+      }
+    }
+  }
+
   // 알림 토글 시 순차적 애니메이션 처리
   void _toggleAlarm() {
     setState(() {
@@ -62,6 +82,14 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // GoRouter에서 전달받은 routine 데이터
+    final routineData = GoRouterState.of(context).extra as Routine?;
+
+    // 수정 모드인지 확인하고 초기값 설정
+    if (routineData != null) {
+      _initializeWithRoutineData(routineData);
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
