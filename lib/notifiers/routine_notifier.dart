@@ -78,32 +78,6 @@ class RoutinesNotifier extends _$RoutinesNotifier {
     await loadRoutines(); // 상태 새로고침
   }
 
-  /// 루틴 등록 화면용 새 루틴 추가
-  Future<bool> createRoutineFromScreen({
-    required String name,
-    required List<int> selectedWeekdays,
-    required DateTime startTime,
-    required bool isAlarmEnabled,
-  }) async {
-    try {
-      if (name.trim().isEmpty || selectedWeekdays.isEmpty) {
-        return false;
-      }
-
-      await createRoutine(
-        title: name.trim(),
-        description: '',
-        emoji: '🌱',
-        type: RoutineType.custom,
-        weekdays: selectedWeekdays,
-        reminderTime: isAlarmEnabled ? startTime : null,
-      );
-      
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
 
   /// 오늘 해야 할 루틴들을 반환하는 헬퍼 메서드
   List<Routine> getTodayRoutines() {
@@ -144,8 +118,7 @@ class RoutinesNotifier extends _$RoutinesNotifier {
 List<Routine> todayRoutines(ref) {
   final routinesAsync = ref.watch(routinesNotifierProvider);
   return routinesAsync.when(
-    data: (routines) =>
-        routines.where((routine) => routine.shouldExecuteToday()).toList(),
+    data: (routines) => routines.where((routine) => routine.shouldExecuteToday()).toList(),
     loading: () => [],
     error: (_, __) => [],
   );

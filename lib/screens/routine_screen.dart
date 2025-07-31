@@ -422,7 +422,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
                     top: false,
                     child: PrimaryButton(
                       onPressed: _isSaving ? null : _saveRoutine,
-                      text: '완료',
+                      text: routineData != null ? '수정' : '완료',
                       isLoading: _isSaving,
                     ),
                   ),
@@ -458,21 +458,35 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
       _isSaving = true;
     });
 
+    final routineData = GoRouterState.of(context).extra as Routine?;
+
     try {
-      // 새로운 routinesNotifierProvider로 루틴 저장
-      await ref.read(routinesNotifierProvider.notifier).createRoutineFromScreen(
-            name: name,
-            selectedWeekdays: selectedDays,
-            startTime: _selectedTime,
-            isAlarmEnabled: _isAlarmEnabled,
-          );
+      if (routineData != null) {
+        // 루틴 수정 모드
+        await ref.read(routinesNotifierProvider.notifier).updateRoutine(
+              routineData.copyWith(
+                title: name,
+                weekdays: selectedDays,
+                reminderTime: _isAlarmEnabled ? _selectedTime : null,
+              ),
+            );
+      } else {
+        // 루틴 생성 모드
+        await ref.read(routinesNotifierProvider.notifier).createRoutine(
+              title: name,
+              description: '',
+              emoji: '🌱',
+              type: RoutineType.custom,
+              weekdays: selectedDays,
+              reminderTime: _isAlarmEnabled ? _selectedTime : null,
+            );
+      }
 
-      // 성공으로 처리
-      const success = true;
-
-      if (success && mounted) {
-        // 루틴 상세 페이지로 이동
-        context.go('/routine-detail');
+      if (mounted) {
+        if (routineData != null)
+          context.go('/');
+        else
+          context.go('/routine-detail');
       }
     } catch (e) {
       ErrorSnackbar.show(context, '오류가 발생했습니다: ${e.toString()}');

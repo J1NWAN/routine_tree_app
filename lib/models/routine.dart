@@ -67,6 +67,37 @@ class Routine extends HiveObject {
     if (daysSinceCreated == 0) return 0.0;
     return (totalCompleted / daysSinceCreated).clamp(0.0, 1.0);
   }
+
+  // copyWith 메서드 추가
+  Routine copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? emoji,
+    DateTime? createdAt,
+    bool? isActive,
+    RoutineType? type,
+    List<int>? weekdays,
+    DateTime? reminderTime,
+    int? currentStreak,
+    int? bestStreak,
+    int? totalCompleted,
+  }) {
+    return Routine(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      emoji: emoji ?? this.emoji,
+      createdAt: createdAt ?? this.createdAt,
+      isActive: isActive ?? this.isActive,
+      type: type ?? this.type,
+      weekdays: weekdays ?? this.weekdays,
+      reminderTime: reminderTime ?? this.reminderTime,
+      currentStreak: currentStreak ?? this.currentStreak,
+      bestStreak: bestStreak ?? this.bestStreak,
+      totalCompleted: totalCompleted ?? this.totalCompleted,
+    );
+  }
 }
 
 @HiveType(typeId: 1)

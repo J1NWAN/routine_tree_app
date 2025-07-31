@@ -93,9 +93,7 @@ class RoutineService {
   /// 반환값: 오늘 요일에 해당하고 활성화된 루틴 리스트
   Future<List<Routine>> getTodayRoutines() async {
     final allRoutines = await _repository.getAllRoutines();
-    return allRoutines
-        .where((routine) => routine.shouldExecuteToday())
-        .toList();
+    return allRoutines.where((routine) => routine.shouldExecuteToday()).toList();
   }
 
   /// 활성화된 모든 루틴을 조회합니다
