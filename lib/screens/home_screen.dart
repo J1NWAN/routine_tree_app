@@ -22,6 +22,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(CupertinoIcons.tree), // 추후 나무 이미지로 변경
           onPressed: () {
