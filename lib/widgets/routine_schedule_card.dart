@@ -1,24 +1,27 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../models/routine.dart';
 import '../constants/weekdays.dart';
+import '../notifiers/routine_notifier.dart';
+import 'common/common_dialog.dart';
 
-class RoutineScheduleCard extends StatelessWidget {
+class RoutineScheduleCard extends ConsumerWidget {
   final Routine routine;
   final DateTime selectedDate;
 
   const RoutineScheduleCard({super.key, required this.routine, required this.selectedDate});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // 가상의 시간 (실제로는 routine에 시간 정보가 있어야 함)
     final startTime = routine.reminderTime ?? DateTime.now();
     final endTime = startTime.add(const Duration(minutes: 30));
 
     return GestureDetector(
       onTap: () {
-        context.go('/routine');
+        context.go('/routine-detail', extra: routine);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -59,7 +62,7 @@ class RoutineScheduleCard extends StatelessWidget {
                                 // TODO: 설정/수정 화면으로 이동
                                 context.go('/routine', extra: routine);
                               } else if (value == 'delete') {
-                                // TODO: 삭제 확인 다이얼로그 표시
+                                _showDeleteConfirmDialog(context, ref);
                               }
                             },
                             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -180,5 +183,36 @@ class RoutineScheduleCard extends StatelessWidget {
 
   String _formatTime(DateTime time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showDeleteConfirmDialog(BuildContext context, WidgetRef ref) async {
+    final confirmed = await CommonDialog.showDeleteDialog(
+      context: context,
+      itemName: '루틴',
+      customMessage: '삭제한 루틴은 복구할 수 없습니다.',
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref.read(routinesNotifierProvider.notifier).deleteRoutine(routine.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('루틴 "${routine.title}"이(가) 삭제되었습니다'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('삭제 중 오류가 발생했습니다: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }
