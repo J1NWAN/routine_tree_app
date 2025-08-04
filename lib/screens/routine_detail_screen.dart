@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:routine_tree_app/models/routine.dart';
 import 'package:widgets_easier/widgets_easier.dart';
 
 class RoutineDetailScreen extends ConsumerStatefulWidget {
@@ -14,8 +15,63 @@ class RoutineDetailScreen extends ConsumerStatefulWidget {
 class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
   int selectedHours = 0;
   int selectedMinutes = 0;
+
+  var title = '';
+  String startTime = '';
+  String endTime = '';
+  DateTime? routineStartTime;
+
+  // 전달받은 routine 데이터로 초기값 설정
+  void _initializeWithRoutineData(Routine routine) {
+    title = routine.title;
+    routineStartTime = routine.reminderTime ?? DateTime.now();
+    startTime = _formatTime(routineStartTime!);
+    _updateEndTime();
+  }
+
+  // endTime 계산 및 업데이트
+  void _updateEndTime() {
+    if (routineStartTime != null) {
+      DateTime calculatedEndTime = routineStartTime!.add(
+        Duration(hours: selectedHours, minutes: selectedMinutes),
+      );
+      endTime = _formatTime(calculatedEndTime);
+    }
+  }
+
+  String _formatTime(DateTime time) {
+    int hour = time.hour;
+    String period = hour >= 12 ? '오후' : '오전';
+    int displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    return '$period $displayHour:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDuration() {
+    if (selectedHours == 0 && selectedMinutes == 0) {
+      return '(0초)';
+    }
+
+    String result = '(';
+    if (selectedHours > 0) {
+      result += '$selectedHours시간';
+    }
+    if (selectedMinutes > 0) {
+      if (selectedHours > 0) result += ' ';
+      result += '$selectedMinutes분';
+    }
+    result += ')';
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final routineData = GoRouterState.of(context).extra as Routine?;
+
+    // 수정 모드인지 확인하고 초기값 설정
+    if (routineData != null) {
+      _initializeWithRoutineData(routineData);
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -32,9 +88,9 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    '루틴테스트',
-                    style: TextStyle(
+                  Text(
+                    title,
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
@@ -59,7 +115,9 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                 ],
               ),
               Text(
-                '오전 9:00 (0초)',
+                (selectedHours == 0 && selectedMinutes == 0)
+                    ? '$startTime ${_formatDuration()}'
+                    : '$startTime - $endTime ${_formatDuration()}',
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 10,
@@ -274,6 +332,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                         onSelectedItemChanged: (int index) {
                           setState(() {
                             selectedHours = index;
+                            _updateEndTime();
                           });
                         },
                         children: List<Widget>.generate(24, (int index) {
@@ -292,6 +351,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                         onSelectedItemChanged: (int index) {
                           setState(() {
                             selectedMinutes = index;
+                            _updateEndTime();
                           });
                         },
                         children: List<Widget>.generate(60, (int index) {
