@@ -18,7 +18,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final routinesAsync = ref.watch(routinesNotifierProvider);
+    final routinesAsync = ref.watch(routineNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -33,7 +33,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.refresh(routinesNotifierProvider);
+          ref.refresh(routineNotifierProvider);
         },
         child: SingleChildScrollView(
           child: Container(

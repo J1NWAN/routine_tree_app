@@ -7,13 +7,13 @@ class DailyStatsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final routinesAsync = ref.watch(routinesNotifierProvider);
-    
+    final routinesAsync = ref.watch(routineNotifierProvider);
+
     return routinesAsync.when(
       data: (routines) {
         final activeRoutines = routines.where((r) => r.isActive).length;
         final todayRoutines = routines.where((r) => r.shouldExecuteToday()).length;
-        
+
         return Card(
           margin: const EdgeInsets.all(16),
           child: Padding(
@@ -24,8 +24,8 @@ class DailyStatsCard extends ConsumerWidget {
                 Text(
                   '오늘의 루틴 현황',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -33,7 +33,8 @@ class DailyStatsCard extends ConsumerWidget {
                   children: [
                     _buildStatItem(context, '전체 루틴', '$activeRoutines개', Icons.list_alt),
                     _buildStatItem(context, '오늘 루틴', '$todayRoutines개', Icons.today),
-                    _buildStatItem(context, '진행률', '${todayRoutines > 0 ? (todayRoutines * 100 / activeRoutines).round() : 0}%', Icons.trending_up),
+                    _buildStatItem(
+                        context, '진행률', '${todayRoutines > 0 ? (todayRoutines * 100 / activeRoutines).round() : 0}%', Icons.trending_up),
                   ],
                 ),
               ],
@@ -66,16 +67,16 @@ class DailyStatsCard extends ConsumerWidget {
         Text(
           value,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).primaryColor,
-          ),
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
-          ),
+                color: Colors.grey[600],
+              ),
         ),
       ],
     );

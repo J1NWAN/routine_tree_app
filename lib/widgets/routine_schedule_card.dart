@@ -194,7 +194,7 @@ class RoutineScheduleCard extends ConsumerWidget {
 
     if (confirmed == true) {
       try {
-        await ref.read(routinesNotifierProvider.notifier).deleteRoutine(routine.id);
+        await ref.read(routineNotifierProvider.notifier).deleteRoutine(routine.id);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

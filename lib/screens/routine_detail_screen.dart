@@ -120,7 +120,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                     : '$startTime - $endTime ${_formatDuration()}',
                 style: TextStyle(
                   color: Colors.grey[500],
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -332,7 +332,6 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                         onSelectedItemChanged: (int index) {
                           setState(() {
                             selectedHours = index;
-                            _updateEndTime();
                           });
                         },
                         children: List<Widget>.generate(24, (int index) {
@@ -351,7 +350,6 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                         onSelectedItemChanged: (int index) {
                           setState(() {
                             selectedMinutes = index;
-                            _updateEndTime();
                           });
                         },
                         children: List<Widget>.generate(60, (int index) {

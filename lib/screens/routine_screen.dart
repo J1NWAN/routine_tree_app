@@ -463,7 +463,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     try {
       if (routineData != null) {
         // 루틴 수정 모드
-        await ref.read(routinesNotifierProvider.notifier).updateRoutine(
+        await ref.read(routineNotifierProvider.notifier).updateRoutine(
               routineData.copyWith(
                 title: name,
                 weekdays: selectedDays,
@@ -472,7 +472,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
             );
       } else {
         // 루틴 생성 모드
-        await ref.read(routinesNotifierProvider.notifier).createRoutine(
+        await ref.read(routineNotifierProvider.notifier).createRoutine(
               title: name,
               description: '',
               emoji: '🌱',
