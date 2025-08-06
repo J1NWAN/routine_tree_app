@@ -1,0 +1,77 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Flutter: Run Web",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "run",
+                "-d",
+                "web-server",
+                "--web-port",
+                "8080",
+                "--web-hostname",
+                "0.0.0.0"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Flutter: Build Web",
+            "type": "shell", 
+            "command": "flutter",
+            "args": [
+                "build",
+                "web",
+                "--release"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Flutter: Clean",
+            "type": "shell",
+            "command": "flutter", 
+            "args": ["clean"],
+            "group": "build"
+        },
+        {
+            "label": "Flutter: Pub Get",
+            "type": "shell",
+            "command": "flutter",
+            "args": ["pub", "get"],
+            "group": "build"
+        },
+        {
+            "label": "Flutter: Code Generation",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "packages",
+                "pub",
+                "run", 
+                "build_runner",
+                "build",
+                "--delete-conflicting-outputs"
+            ],
+            "group": "build"
+        }
+    ]
+}
