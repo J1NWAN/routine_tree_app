@@ -1,0 +1,53 @@
+{
+  "name": "Flutter Development",
+  "image": "ghcr.io/cirruslabs/flutter:3.24.3",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dart-code.dart-code",
+        "dart-code.flutter",
+        "ms-vscode.vscode-json",
+        "ms-vscode.hexeditor",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next"
+      ],
+      "settings": {
+        "dart.flutterSdkPath": "/usr/local/flutter",
+        "dart.sdkPath": "/usr/local/flutter/bin/cache/dart-sdk",
+        "dart.enableSdkFormatter": true,
+        "dart.lineLength": 120,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll": "explicit"
+        }
+      }
+    }
+  },
+
+  "forwardPorts": [3000, 8080, 9000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Flutter Web Dev Server",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Flutter Web",
+      "onAutoForward": "notify"  
+    }
+  },
+
+  "postCreateCommand": ".devcontainer/setup.sh",
+  
+  "remoteUser": "root",
+  
+  "mounts": [
+    "source=${localWorkspaceFolder}/.vscode,target=/workspace/.vscode,type=bind,consistency=cached"
+  ]
+}
