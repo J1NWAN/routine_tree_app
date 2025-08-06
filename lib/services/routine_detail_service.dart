@@ -29,6 +29,7 @@ class RoutineDetailService {
   }) async {
     final item = RoutineDetailItem(
       id: _uuid.v4(),
+      routineId: routineId,
       title: title,
       hours: hours,
       minutes: minutes,
