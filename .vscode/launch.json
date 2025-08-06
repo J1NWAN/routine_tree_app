@@ -1,0 +1,39 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "routine_tree_app (Web)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "-d",
+                "web-server",
+                "--web-port",
+                "8080",
+                "--web-hostname",
+                "0.0.0.0"
+            ]
+        },
+        {
+            "name": "routine_tree_app (Debug)",
+            "request": "launch", 
+            "type": "dart",
+            "program": "lib/main.dart"
+        },
+        {
+            "name": "routine_tree_app (Profile)",
+            "request": "launch",
+            "type": "dart", 
+            "program": "lib/main.dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "routine_tree_app (Release)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart", 
+            "flutterMode": "release"
+        }
+    ]
+}
