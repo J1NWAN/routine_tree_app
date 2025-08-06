@@ -1,6 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/routine.dart';
+import '../models/routine_detail_item.dart';
 import '../services/routine_service.dart';
+import '../services/routine_detail_service.dart';
 
 part 'routine_notifier.g.dart';
 
@@ -19,16 +21,19 @@ class RoutineNotifier extends _$RoutineNotifier {
   @override
   Future<List<Routine>> build() async {
     _routineService = ref.read(routineServiceProvider);
-    return await _routineService.getAllRoutines();
+    return _routineService.getAllRoutines();
   }
 
   /// 모든 루틴을 다시 로드합니다
   /// 데이터베이스에서 최신 루틴 목록을 가져와 상태를 업데이트합니다
-  Future<void> loadRoutines() async {
+  void loadRoutines() {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      return await _routineService.getAllRoutines();
-    });
+    try {
+      final routines = _routineService.getAllRoutines();
+      state = AsyncValue.data(routines);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   /// 새로운 루틴을 생성합니다
@@ -54,28 +59,28 @@ class RoutineNotifier extends _$RoutineNotifier {
       weekdays: weekdays,
       reminderTime: reminderTime,
     );
-    await loadRoutines(); // 상태 새로고침
+    loadRoutines(); // 상태 새로고침
   }
 
   /// 루틴 정보를 업데이트합니다
   /// [routine] 업데이트할 루틴 객체
   Future<void> updateRoutine(Routine routine) async {
     await _routineService.updateRoutine(routine);
-    await loadRoutines(); // 상태 새로고침
+    loadRoutines(); // 상태 새로고침
   }
 
   /// 루틴을 삭제합니다
   /// [routineId] 삭제할 루틴의 ID
   Future<void> deleteRoutine(String routineId) async {
     await _routineService.deleteRoutine(routineId);
-    await loadRoutines(); // 상태 새로고침
+    loadRoutines(); // 상태 새로고침
   }
 
   /// 루틴의 활성/비활성 상태를 토글합니다
   /// [routineId] 상태를 변경할 루틴의 ID
   Future<void> toggleRoutineActive(String routineId) async {
     await _routineService.toggleRoutineActive(routineId);
-    await loadRoutines(); // 상태 새로고침
+    loadRoutines(); // 상태 새로고침
   }
 
   /// 오늘 해야 할 루틴들을 반환하는 헬퍼 메서드
@@ -151,55 +156,40 @@ Routine? routineById(ref, String id) {
   );
 }
 
-/// 루틴 상세 영역 ///
-/// 루틴 상세 화면의 할 일 아이템을 위한 모델
-class RoutineDetailItem {
-  final String? id;
-  final String title;
-  final int hours;
-  final int minutes;
-  final bool isCompleted;
-
-  RoutineDetailItem({
-    this.id,
-    required this.title,
-    required this.hours,
-    required this.minutes,
-    this.isCompleted = false,
-  });
-
-  RoutineDetailItem copyWith({
-    String? id,
-    String? title,
-    int? hours,
-    int? minutes,
-    bool? isCompleted,
-  }) {
-    return RoutineDetailItem(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      hours: hours ?? this.hours,
-      minutes: minutes ?? this.minutes,
-      isCompleted: isCompleted ?? this.isCompleted,
-    );
-  }
+/// RoutineDetailService의 싱글톤 인스턴스를 제공하는 Provider
+@riverpod
+RoutineDetailService routineDetailService(ref) {
+  return RoutineDetailService();
 }
 
+/// 루틴 상세 화면의 할 일 아이템 상태를 관리하는 Notifier
+/// 실제 데이터는 RoutineDetailService를 통해 저장/조회합니다
 @riverpod
 class RoutineDetailNotifier extends _$RoutineDetailNotifier {
+  late final RoutineDetailService _detailService;
+  late String _currentRoutineId;
+
   @override
   List<RoutineDetailItem> build() {
+    _detailService = ref.read(routineDetailServiceProvider);
     return [];
   }
 
+  /// 특정 루틴의 할일 아이템들을 로드합니다
+  void loadRoutineItems(String routineId) {
+    _currentRoutineId = routineId;
+    final items = _detailService.getRoutineItems(routineId);
+    state = items;
+  }
+
   /// 새로운 할 일 아이템을 추가합니다
-  void addRoutineItem({
+  Future<void> addRoutineItem({
     required String title,
     required int hours,
     required int minutes,
-  }) {
-    final newItem = RoutineDetailItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+  }) async {
+    final newItem = await _detailService.createRoutineItem(
+      routineId: _currentRoutineId,
       title: title,
       hours: hours,
       minutes: minutes,
@@ -208,37 +198,36 @@ class RoutineDetailNotifier extends _$RoutineDetailNotifier {
   }
 
   /// 할 일 아이템을 제거합니다
-  void removeRoutineItem(String itemId) {
+  Future<void> removeRoutineItem(String itemId) async {
+    await _detailService.deleteRoutineItem(_currentRoutineId, itemId);
     state = state.where((item) => item.id != itemId).toList();
   }
 
   /// 할 일 아이템의 완료 상태를 토글합니다
-  void toggleItemCompletion(String itemId) {
-    state = state.map((item) {
-      if (item.id == itemId) {
-        return item.copyWith(isCompleted: !item.isCompleted);
-      }
-      return item;
-    }).toList();
+  Future<void> toggleItemCompletion(String itemId) async {
+    await _detailService.toggleItemCompletion(_currentRoutineId, itemId);
+    loadRoutineItems(_currentRoutineId); // 상태 새로고침
   }
 
   /// 모든 할 일 아이템을 제거합니다
-  void clearAllItems() {
+  Future<void> clearAllItems() async {
+    await _detailService.deleteAllRoutineItems(_currentRoutineId);
     state = [];
   }
 
   /// 완료된 아이템들을 제거합니다
-  void clearCompletedItems() {
-    state = state.where((item) => !item.isCompleted).toList();
+  Future<void> clearCompletedItems() async {
+    await _detailService.deleteCompletedItems(_currentRoutineId);
+    loadRoutineItems(_currentRoutineId); // 상태 새로고침
   }
 
   /// 전체 소요 시간을 계산합니다 (분 단위)
   int getTotalDurationInMinutes() {
-    return state.fold(0, (total, item) => total + (item.hours * 60) + item.minutes);
+    return _detailService.getTotalDurationInMinutes(_currentRoutineId);
   }
 
   /// 완료된 아이템들의 소요 시간을 계산합니다 (분 단위)
   int getCompletedDurationInMinutes() {
-    return state.where((item) => item.isCompleted).fold(0, (total, item) => total + (item.hours * 60) + item.minutes);
+    return _detailService.getCompletedDurationInMinutes(_currentRoutineId);
   }
 }

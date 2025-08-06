@@ -1,14 +1,14 @@
 import '../models/routine.dart';
-import '../models/routine_record.dart';
-import '../models/tree_progress.dart';
 import '../repositories/routine_repository.dart';
+import '../repositories/routine_detail_repository.dart';
 import 'package:uuid/uuid.dart';
 
 /// 루틴 관련 비즈니스 로직을 처리하는 서비스 클래스
 /// Repository 패턴을 사용하여 데이터 액세스 로직과 분리
 class RoutineService {
-  /// 데이터 액세스를 위한 Repository 인스턴스
-  final RoutineRepository _repository = RoutineRepository();
+  /// 데이터 액세스를 위한 Repository 인스턴스들
+  final RoutineRepository _routineRepository = RoutineRepository();
+  final RoutineDetailRepository _detailRepository = RoutineDetailRepository();
 
   /// 고유 ID 생성을 위한 UUID 생성기
   static const _uuid = Uuid();
@@ -20,7 +20,7 @@ class RoutineService {
   /// 이미 생성된 루틴 객체를 저장합니다
   /// [routine] 저장할 루틴 객체
   Future<void> createRoutine(Routine routine) async {
-    await _repository.saveRoutine(routine);
+    await _routineRepository.saveRoutine(routine);
   }
 
   /// 새로운 루틴을 생성하고 저장합니다
@@ -50,56 +50,57 @@ class RoutineService {
       reminderTime: reminderTime,
     );
 
-    await _repository.saveRoutine(routine);
+    await _routineRepository.saveRoutine(routine);
     return routine;
   }
 
   /// 모든 루틴을 조회합니다
   /// 반환값: 전체 루틴 리스트
-  Future<List<Routine>> getAllRoutines() async {
-    return await _repository.getAllRoutines();
+  List<Routine> getAllRoutines() {
+    return _routineRepository.getAllRoutines();
   }
 
   /// 특정 ID의 루틴을 조회합니다
   /// [id] 조회할 루틴의 ID
   /// 반환값: 루틴 객체 (없으면 null)
-  Future<Routine?> getRoutineById(String id) async {
-    return await _repository.getRoutineById(id);
+  Routine? getRoutineById(String id) {
+    return _routineRepository.getRoutine(id);
   }
 
   /// 루틴 정보를 업데이트합니다
   /// [routine] 업데이트할 루틴 객체
   Future<void> updateRoutine(Routine routine) async {
-    await _repository.saveRoutine(routine);
+    await _routineRepository.saveRoutine(routine);
   }
 
-  /// 루틴을 삭제합니다
+  /// 루틴을 삭제합니다 - 관련 데이터도 모두 삭제
   /// [id] 삭제할 루틴의 ID
   Future<void> deleteRoutine(String id) async {
-    await _repository.deleteRoutine(id);
+    await _routineRepository.deleteRoutine(id);
+    await _detailRepository.deleteAllRoutineItems(id);
   }
 
   /// 루틴의 활성/비활성 상태를 토글합니다
   /// [routineId] 상태를 변경할 루틴의 ID
   Future<void> toggleRoutineActive(String routineId) async {
-    final routine = await _repository.getRoutineById(routineId);
+    final routine = _routineRepository.getRoutine(routineId);
     if (routine != null) {
       routine.isActive = !routine.isActive;
-      await _repository.saveRoutine(routine);
+      await _routineRepository.saveRoutine(routine);
     }
   }
 
   /// 오늘 실행해야 하는 루틴들을 조회합니다
   /// 반환값: 오늘 요일에 해당하고 활성화된 루틴 리스트
-  Future<List<Routine>> getTodayRoutines() async {
-    final allRoutines = await _repository.getAllRoutines();
+  List<Routine> getTodayRoutines() {
+    final allRoutines = _routineRepository.getAllRoutines();
     return allRoutines.where((routine) => routine.shouldExecuteToday()).toList();
   }
 
   /// 활성화된 모든 루틴을 조회합니다
   /// 반환값: isActive가 true인 루틴 리스트
-  Future<List<Routine>> getActiveRoutines() async {
-    final allRoutines = await _repository.getAllRoutines();
+  List<Routine> getActiveRoutines() {
+    final allRoutines = _routineRepository.getAllRoutines();
     return allRoutines.where((routine) => routine.isActive).toList();
   }
 }
