@@ -27,6 +27,7 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
   DateTime _selectedTime = DateTime.now();
   bool _isSaving = false;
   Map<int, DateTime>? _weekdayTimes; // 요일별 개별 시간 설정
+  bool _isInitialized = false; // 초기화 상태 추적
 
   // 요일 선택 상태 관리 (일~토: 0~6)
   final List<bool> _selectedWeekdays = [
@@ -85,9 +86,10 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
     // GoRouter에서 전달받은 routine 데이터
     final routineData = GoRouterState.of(context).extra as Routine?;
 
-    // 수정 모드인지 확인하고 초기값 설정
-    if (routineData != null) {
+    // 수정 모드인지 확인하고 초기값 설정 (한번만)
+    if (routineData != null && !_isInitialized) {
       _initializeWithRoutineData(routineData);
+      _isInitialized = true;
     }
 
     return Scaffold(
