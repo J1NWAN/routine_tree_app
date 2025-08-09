@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:routine_tree_app/models/routine.dart';
+import 'package:routine_tree_app/models/routine_detail_item.dart';
+import 'package:routine_tree_app/notifiers/routine_detail_notifier.dart';
+import 'package:routine_tree_app/widgets/common/error_snackbar.dart';
 import 'package:widgets_easier/widgets_easier.dart';
 
 class RoutineDetailScreen extends ConsumerStatefulWidget {
@@ -13,6 +16,8 @@ class RoutineDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
+  final TextEditingController _nameController = TextEditingController();
+
   int selectedHours = 0;
   int selectedMinutes = 0;
 
@@ -20,6 +25,8 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
   String startTime = '';
   String endTime = '';
   DateTime? routineStartTime;
+  bool isCompleted = false;
+  bool _isInitialized = false;
 
   // 전달받은 routine 데이터로 초기값 설정
   void _initializeWithRoutineData(Routine routine) {
@@ -27,37 +34,84 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
     routineStartTime = routine.reminderTime ?? DateTime.now();
     startTime = _formatTime(routineStartTime!);
     _updateEndTime();
+
+    // routineDetailNotifier에 해당 routine의 아이템들 로드 (build 완료 후)
+    Future(() {
+      ref.read(routineDetailNotifierProvider.notifier).loadRoutineItems(routine.id);
+    });
   }
 
-  // endTime 계산 및 업데이트
+  // endTime 계산 및 업데이트 (루틴 아이템들의 총 소요시간 반영)
   void _updateEndTime() {
     if (routineStartTime != null) {
+      final routineDetailItems = ref.read(routineDetailNotifierProvider);
+
+      // 루틴 아이템들의 총 소요시간 계산
+      int totalHours = 0;
+      int totalMinutes = 0;
+
+      for (var item in routineDetailItems) {
+        totalHours += item.hours;
+        totalMinutes += item.minutes;
+      }
+
+      // 분이 60을 넘으면 시간으로 변환
+      totalHours += totalMinutes ~/ 60;
+      totalMinutes = totalMinutes % 60;
+
       DateTime calculatedEndTime = routineStartTime!.add(
-        Duration(hours: selectedHours, minutes: selectedMinutes),
+        Duration(hours: totalHours, minutes: totalMinutes),
       );
       endTime = _formatTime(calculatedEndTime);
+      print(endTime);
     }
   }
 
   String _formatTime(DateTime time) {
     int hour = time.hour;
     String period = hour >= 12 ? '오후' : '오전';
-    int displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    int displayHour;
+
+    if (hour == 0) {
+      displayHour = 12; // 자정(00:xx) -> 오전 12:xx
+    } else if (hour == 12) {
+      displayHour = 12; // 정오(12:xx) -> 오후 12:xx
+    } else if (hour > 12) {
+      displayHour = hour - 12; // 13:xx -> 오후 1:xx, 23:xx -> 오후 11:xx
+    } else {
+      displayHour = hour; // 1:xx -> 오전 1:xx, 11:xx -> 오전 11:xx
+    }
+
     return '$period $displayHour:${time.minute.toString().padLeft(2, '0')}';
   }
 
   String _formatDuration() {
-    if (selectedHours == 0 && selectedMinutes == 0) {
-      return '(0초)';
+    final routineDetailItems = ref.read(routineDetailNotifierProvider);
+
+    // 루틴 아이템들의 총 소요시간 계산
+    int totalHours = 0;
+    int totalMinutes = 0;
+
+    for (var item in routineDetailItems) {
+      totalHours += item.hours;
+      totalMinutes += item.minutes;
+    }
+
+    // 분이 60을 넘으면 시간으로 변환
+    totalHours += totalMinutes ~/ 60;
+    totalMinutes = totalMinutes % 60;
+
+    if (totalHours == 0 && totalMinutes == 0) {
+      return '(0분)';
     }
 
     String result = '(';
-    if (selectedHours > 0) {
-      result += '$selectedHours시간';
+    if (totalHours > 0) {
+      result += '$totalHours시간';
     }
-    if (selectedMinutes > 0) {
-      if (selectedHours > 0) result += ' ';
-      result += '$selectedMinutes분';
+    if (totalMinutes > 0) {
+      if (totalHours > 0) result += ' ';
+      result += '$totalMinutes분';
     }
     result += ')';
     return result;
@@ -67,9 +121,20 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
   Widget build(BuildContext context) {
     final routineData = GoRouterState.of(context).extra as Routine?;
 
-    // 수정 모드인지 확인하고 초기값 설정
-    if (routineData != null) {
+    // 수정 모드인지 확인하고 초기값 설정 (한번만)
+    if (routineData != null && !_isInitialized) {
       _initializeWithRoutineData(routineData);
+      _isInitialized = true;
+    }
+
+    // routineDetail 아이템들 가져오기
+    final routineDetailItems = ref.watch(routineDetailNotifierProvider);
+
+    // 루틴 아이템들이 변경될 때마다 endTime 업데이트
+    if (routineStartTime != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _updateEndTime();
+      });
     }
 
     return Scaffold(
@@ -115,9 +180,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                 ],
               ),
               Text(
-                (selectedHours == 0 && selectedMinutes == 0)
-                    ? '$startTime ${_formatDuration()}'
-                    : '$startTime - $endTime ${_formatDuration()}',
+                routineDetailItems.isEmpty ? '$startTime ${_formatDuration()}' : '$startTime - $endTime ${_formatDuration()}',
                 style: TextStyle(
                   color: Colors.grey[500],
                   fontSize: 11,
@@ -128,12 +191,13 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                 height: 20,
               ),
 
+              // 저장된 루틴 아이템들
+              ...routineDetailItems.map((item) => buildSavedRoutineWidget(item)),
+
               // 루틴 추가 컨테이너 위젯
               buildRoutineWidget(null),
 
-              const SizedBox(
-                height: 300,
-              ),
+              const SizedBox(height: 300),
 
               // 루틴 추천
               Row(
@@ -253,6 +317,57 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
     );
   }
 
+  // 저장된 루틴 위젯
+  Widget buildSavedRoutineWidget(RoutineDetailItem item) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(15, 0, 5, 0),
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            item.title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Row(
+            children: [
+              if (item.hours > 0 || item.minutes > 0)
+                Text(
+                  '${item.hours > 0 ? '${item.hours}시간 ' : ''}${item.minutes > 0 ? '${item.minutes}분' : ''}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              Checkbox(
+                value: item.isCompleted,
+                onChanged: (bool? value) {
+                  ref.read(routineDetailNotifierProvider.notifier).toggleItemCompletion(item.id!);
+                },
+                fillColor: WidgetStateProperty.resolveWith(
+                  (states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return Colors.black;
+                    }
+                    return null; // 디폴트 색상 사용
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   // 루틴 등록 모달 팝업
   void _showRoutineModal(BuildContext context) {
     showModalBottomSheet(
@@ -299,6 +414,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
               ),
               const SizedBox(height: 10),
               TextField(
+                controller: _nameController,
                 decoration: InputDecoration(
                   hintText: '할 일 입력하기',
                   border: OutlineInputBorder(
@@ -368,6 +484,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
+                    _saveRoutineItem();
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
@@ -391,5 +508,45 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
         ),
       ),
     );
+  }
+
+  // 할 일 저장 메서드
+  Future<void> _saveRoutineItem() async {
+    //if (_isSaving) return;
+
+    // 입력 검증
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      ErrorSnackbar.show(context, '루틴 이름을 입력해주세요.');
+      return;
+    }
+
+    if (selectedHours == 0 && selectedMinutes == 0) {
+      ErrorSnackbar.show(context, '소요시간을 설정해주세요.');
+      return;
+    }
+
+    // setState(() {
+    //   _isSaving = true;
+    // });
+
+    final routineData = GoRouterState.of(context).extra as Routine?;
+
+    try {
+      // 할 일 추가
+      await ref.read(routineDetailNotifierProvider.notifier).addRoutineItem(
+            title: name,
+            hours: selectedHours,
+            minutes: selectedMinutes,
+          );
+    } catch (e) {
+      ErrorSnackbar.show(context, '오류가 발생했습니다: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        // setState(() {
+        //   _isSaving = false;
+        // });
+      }
+    }
   }
 }
