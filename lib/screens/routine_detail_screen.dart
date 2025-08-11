@@ -164,7 +164,10 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                   ),
                   GestureDetector(
                     onTap: () {
-                      print('루틴 설정화면으로 이동');
+                      final routineData = GoRouterState.of(context).extra as Routine?;
+                      if (routineData != null) {
+                        context.push('/routine', extra: routineData);
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.all(3),

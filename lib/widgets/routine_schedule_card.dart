@@ -60,7 +60,7 @@ class RoutineScheduleCard extends ConsumerWidget {
                             onSelected: (String value) {
                               if (value == 'edit') {
                                 // TODO: 설정/수정 화면으로 이동
-                                context.go('/routine', extra: routine);
+                                context.push('/routine', extra: routine);
                               } else if (value == 'delete') {
                                 _showDeleteConfirmDialog(context, ref);
                               }

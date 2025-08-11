@@ -94,10 +94,13 @@ class _RoutineScreenState extends ConsumerState<RoutineScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => context.pop(),
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
