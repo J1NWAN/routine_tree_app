@@ -28,6 +28,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
   DateTime? routineStartTime;
   bool isCompleted = false;
   bool _isInitialized = false;
+  RoutineDetailItem? _editingItem; // 수정 중인 아이템
 
   // 전달받은 routine 데이터로 초기값 설정
   void _initializeWithRoutineData(Routine routine) {
@@ -322,7 +323,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
   Widget buildSavedRoutineWidget(RoutineDetailItem item) {
     return GestureDetector(
       onTap: () {
-        print('할 일 수정화면으로 이동');
+        _showRoutineModal(context, editItem: item);
       },
       onLongPress: () {
         _showItemContextMenu(context, item);
@@ -460,8 +461,25 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
     }
   }
 
-  // 루틴 등록 모달 팝업
-  void _showRoutineModal(BuildContext context) {
+  // 루틴 등록/수정 모달 팝업
+  void _showRoutineModal(BuildContext context, {RoutineDetailItem? editItem}) {
+    // 수정할 아이템 저장
+    _editingItem = editItem;
+
+    // 수정 모드일 때 기존 값으로 초기화
+    if (editItem != null) {
+      _nameController.text = editItem.title;
+      selectedHours = editItem.hours;
+      selectedMinutes = editItem.minutes;
+    } else {
+      // 새로 추가할 때는 초기화
+      _nameController.clear();
+      selectedHours = 0;
+      selectedMinutes = 0;
+    }
+
+    final isEditMode = editItem != null;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -483,9 +501,9 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    '루틴 등록',
-                    style: TextStyle(
+                  Text(
+                    isEditMode ? '루틴 수정' : '루틴 등록',
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -585,9 +603,9 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    '등록하기',
-                    style: TextStyle(
+                  child: Text(
+                    isEditMode ? '수정하기' : '등록하기',
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
@@ -607,28 +625,45 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
     // 입력 검증
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ErrorSnackbar.show(context, '루틴 이름을 입력해주세요.');
+      if (mounted) {
+        ErrorSnackbar.show(context, '루틴 이름을 입력해주세요.');
+      }
       return;
     }
 
     if (selectedHours == 0 && selectedMinutes == 0) {
-      ErrorSnackbar.show(context, '소요시간을 설정해주세요.');
+      if (mounted) {
+        ErrorSnackbar.show(context, '소요시간을 설정해주세요.');
+      }
       return;
     }
 
     try {
-      // 할 일 추가
-      await ref.read(routineDetailNotifierProvider.notifier).addRoutineItem(
-            title: name,
-            hours: selectedHours,
-            minutes: selectedMinutes,
-          );
+      if (_editingItem != null) {
+        // 수정 모드: 기존 아이템 삭제 후 새 아이템 추가
+        await ref.read(routineDetailNotifierProvider.notifier).removeRoutineItem(_editingItem!.id!);
+        await ref.read(routineDetailNotifierProvider.notifier).addRoutineItem(
+              title: name,
+              hours: selectedHours,
+              minutes: selectedMinutes,
+            );
+      } else {
+        // 추가 모드: 새 아이템 추가
+        await ref.read(routineDetailNotifierProvider.notifier).addRoutineItem(
+              title: name,
+              hours: selectedHours,
+              minutes: selectedMinutes,
+            );
+      }
     } catch (e) {
-      ErrorSnackbar.show(context, '오류가 발생했습니다: ${e.toString()}');
+      if (mounted) {
+        ErrorSnackbar.show(context, '오류가 발생했습니다: ${e.toString()}');
+      }
     } finally {
       selectedHours = 0;
       selectedMinutes = 0;
       _nameController.text = '';
+      _editingItem = null; // 수정 아이템 초기화
     }
   }
 }
