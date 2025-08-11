@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:routine_tree_app/models/routine.dart';
 import 'package:routine_tree_app/models/routine_detail_item.dart';
 import 'package:routine_tree_app/notifiers/routine_detail_notifier.dart';
+import 'package:routine_tree_app/widgets/common/common_dialog.dart';
 import 'package:routine_tree_app/widgets/common/error_snackbar.dart';
 import 'package:widgets_easier/widgets_easier.dart';
 
@@ -319,53 +320,144 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
 
   // 저장된 루틴 위젯
   Widget buildSavedRoutineWidget(RoutineDetailItem item) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(15, 0, 5, 0),
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            item.title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: () {
+        print('할 일 수정화면으로 이동');
+      },
+      onLongPress: () {
+        _showItemContextMenu(context, item);
+      },
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(15, 0, 5, 0),
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              item.title,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          Row(
-            children: [
-              if (item.hours > 0 || item.minutes > 0)
-                Text(
-                  '${item.hours > 0 ? '${item.hours}시간 ' : ''}${item.minutes > 0 ? '${item.minutes}분' : ''}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
+            Row(
+              children: [
+                if (item.hours > 0 || item.minutes > 0)
+                  Text(
+                    '${item.hours > 0 ? '${item.hours}시간 ' : ''}${item.minutes > 0 ? '${item.minutes}분' : ''}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                Checkbox(
+                  value: item.isCompleted,
+                  onChanged: (bool? value) {
+                    ref.read(routineDetailNotifierProvider.notifier).toggleItemCompletion(item.id!);
+                  },
+                  fillColor: WidgetStateProperty.resolveWith(
+                    (states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return Colors.black;
+                      }
+                      return null; // 디폴트 색상 사용
+                    },
                   ),
                 ),
-              Checkbox(
-                value: item.isCompleted,
-                onChanged: (bool? value) {
-                  ref.read(routineDetailNotifierProvider.notifier).toggleItemCompletion(item.id!);
-                },
-                fillColor: WidgetStateProperty.resolveWith(
-                  (states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return Colors.black;
-                    }
-                    return null; // 디폴트 색상 사용
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  // 할 일 아이템 컨텍스트 메뉴 표시
+  void _showItemContextMenu(BuildContext context, RoutineDetailItem item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              item.title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('복사'),
+              onTap: () {
+                Navigator.pop(context);
+                _copyItem(item);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('삭제', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteItem(item);
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 할 일 아이템 복사
+  Future<void> _copyItem(RoutineDetailItem item) async {
+    try {
+      await ref.read(routineDetailNotifierProvider.notifier).addRoutineItem(
+            title: '${item.title} (복사)',
+            hours: item.hours,
+            minutes: item.minutes,
+          );
+    } catch (e) {
+      if (mounted) {
+        ErrorSnackbar.show(context, '복사 중 오류가 발생했습니다: ${e.toString()}');
+      }
+    }
+  }
+
+  // 할 일 아이템 삭제
+  Future<void> _deleteItem(RoutineDetailItem item) async {
+    try {
+      await ref.read(routineDetailNotifierProvider.notifier).removeRoutineItem(item.id!);
+    } catch (e) {
+      if (mounted) {
+        ErrorSnackbar.show(context, '삭제 중 오류가 발생했습니다: ${e.toString()}');
+      }
+    }
   }
 
   // 루틴 등록 모달 팝업
@@ -512,8 +604,6 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
 
   // 할 일 저장 메서드
   Future<void> _saveRoutineItem() async {
-    //if (_isSaving) return;
-
     // 입력 검증
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -526,12 +616,6 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
       return;
     }
 
-    // setState(() {
-    //   _isSaving = true;
-    // });
-
-    final routineData = GoRouterState.of(context).extra as Routine?;
-
     try {
       // 할 일 추가
       await ref.read(routineDetailNotifierProvider.notifier).addRoutineItem(
@@ -542,11 +626,9 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
     } catch (e) {
       ErrorSnackbar.show(context, '오류가 발생했습니다: ${e.toString()}');
     } finally {
-      if (mounted) {
-        // setState(() {
-        //   _isSaving = false;
-        // });
-      }
+      selectedHours = 0;
+      selectedMinutes = 0;
+      _nameController.text = '';
     }
   }
 }
