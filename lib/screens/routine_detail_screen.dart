@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:routine_tree_app/models/routine.dart';
 import 'package:routine_tree_app/models/routine_detail_item.dart';
 import 'package:routine_tree_app/notifiers/routine_detail_notifier.dart';
-import 'package:routine_tree_app/widgets/common/common_dialog.dart';
 import 'package:routine_tree_app/widgets/common/error_snackbar.dart';
 import 'package:widgets_easier/widgets_easier.dart';
 
@@ -28,6 +27,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
   DateTime? routineStartTime;
   bool isCompleted = false;
   bool _isInitialized = false;
+  bool isRecommendation = true;
   RoutineDetailItem? _editingItem; // 수정 중인 아이템
 
   // 전달받은 routine 데이터로 초기값 설정
@@ -202,77 +202,81 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
               // 루틴 추가 컨테이너 위젯
               buildRoutineWidget(null),
 
-              const SizedBox(height: 300),
+              const SizedBox(height: 150),
 
               // 루틴 추천
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      print('닫기');
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(
-                            Icons.close,
-                            size: 12,
-                          ),
-                          SizedBox(
-                            width: 3,
-                          ),
-                          Text(
-                            '닫기',
-                            style: TextStyle(fontSize: 10),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      print('새로고침');
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(
-                            CupertinoIcons.refresh,
-                            size: 12,
-                          ),
-                          SizedBox(
-                            width: 3,
-                          ),
-                          Text(
-                            '새로고침',
-                            style: TextStyle(fontSize: 10),
-                          ),
-                        ],
+              if (isRecommendation) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          isRecommendation = false;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.close,
+                              size: 12,
+                            ),
+                            SizedBox(
+                              width: 3,
+                            ),
+                            Text(
+                              '닫기',
+                              style: TextStyle(fontSize: 10),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-              Column(
-                children: List.generate(6, (index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10.0),
-                    child: buildRoutineWidget('추천루틴$index'),
-                  );
-                }),
-              ),
+                    GestureDetector(
+                      onTap: () {
+                        print('새로고침');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.refresh,
+                              size: 12,
+                            ),
+                            SizedBox(
+                              width: 3,
+                            ),
+                            Text(
+                              '새로고침',
+                              style: TextStyle(fontSize: 10),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+                Column(
+                  children: List.generate(6, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10.0),
+                      child: buildRoutineWidget('추천루틴$index'),
+                    );
+                  }),
+                ),
+              ],
             ],
           ),
         ),
