@@ -23,6 +23,26 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
     {'title': '스트레칭', 'hours': 0, 'minutes': 5},
     {'title': '아침 식사', 'hours': 0, 'minutes': 15},
     {'title': '하루치 계획 세우기', 'hours': 0, 'minutes': 10},
+    {'title': '명상', 'hours': 0, 'minutes': 10},
+    {'title': '운동', 'hours': 1, 'minutes': 0},
+    {'title': '일기 쓰기', 'hours': 0, 'minutes': 5},
+    {'title': '물 마시기', 'hours': 0, 'minutes': 1},
+    {'title': '방 환기하기', 'hours': 0, 'minutes': 2},
+    {'title': '영어 공부', 'hours': 0, 'minutes': 20},
+    {'title': '음악 듣기', 'hours': 0, 'minutes': 15},
+    {'title': '요리하기', 'hours': 0, 'minutes': 30},
+    {'title': '산책', 'hours': 0, 'minutes': 20},
+    {'title': '샤워하기', 'hours': 0, 'minutes': 10},
+    {'title': '비타민 섭취', 'hours': 0, 'minutes': 1},
+    {'title': '책상 정리', 'hours': 0, 'minutes': 5},
+    {'title': '뉴스 읽기', 'hours': 0, 'minutes': 10},
+    {'title': '스킨케어', 'hours': 0, 'minutes': 5},
+    {'title': '온라인 강의 듣기', 'hours': 0, 'minutes': 40},
+    {'title': '가계부 작성', 'hours': 0, 'minutes': 5},
+    {'title': '화분에 물주기', 'hours': 0, 'minutes': 3},
+    {'title': '요가', 'hours': 0, 'minutes': 15},
+    {'title': '청소하기', 'hours': 0, 'minutes': 20},
+    {'title': '이메일 확인', 'hours': 0, 'minutes': 10},
   ];
   int selectedHours = 0;
   int selectedMinutes = 0;
@@ -35,6 +55,22 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
   bool _isInitialized = false;
   bool isRecommendation = true;
   RoutineDetailItem? _editingItem; // 수정 중인 아이템
+  List<Map<String, dynamic>> _displayedRecommendations = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshRecommendations();
+  }
+
+  // 랜덤 추천 루틴 생성
+  void _refreshRecommendations() {
+    final shuffled = List<Map<String, dynamic>>.from(recommendationRoutine);
+    shuffled.shuffle();
+    setState(() {
+      _displayedRecommendations = shuffled.take(5).toList();
+    });
+  }
 
   // 전달받은 routine 데이터로 초기값 설정
   void _initializeWithRoutineData(Routine routine) {
@@ -208,7 +244,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
               // 루틴 추가 컨테이너 위젯
               buildRoutineWidget(),
 
-              const SizedBox(height: 150),
+              const SizedBox(height: 80),
 
               // 루틴 추천
               if (isRecommendation) ...[
@@ -246,7 +282,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        print('새로고침');
+                        _refreshRecommendations();
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -275,7 +311,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                 ),
                 const SizedBox(height: 15),
                 Column(
-                  children: recommendationRoutine.map<Widget>((routine) {
+                  children: _displayedRecommendations.map<Widget>((routine) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10.0),
                       child: buildRecommendationWidget(routine),
