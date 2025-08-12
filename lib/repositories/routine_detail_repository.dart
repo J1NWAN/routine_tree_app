@@ -25,9 +25,19 @@ class RoutineDetailRepository {
   }
   
   List<RoutineDetailItem> getRoutineItems(String routineId) {
-    return _routineItemsBox.values
+    final items = _routineItemsBox.values
         .where((item) => item.routineId == routineId)
         .toList();
+    
+    // 생성시간 순으로 정렬 (생성시간이 없으면 끝으로)
+    items.sort((a, b) {
+      if (a.createdAt == null && b.createdAt == null) return 0;
+      if (a.createdAt == null) return 1;
+      if (b.createdAt == null) return -1;
+      return a.createdAt!.compareTo(b.createdAt!);
+    });
+    
+    return items;
   }
   
   Future<void> saveRoutineItem(String routineId, RoutineDetailItem item) async {

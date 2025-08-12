@@ -34,6 +34,7 @@ class RoutineDetailService {
       hours: hours,
       minutes: minutes,
       isCompleted: false,
+      createdAt: DateTime.now(),
     );
 
     await _repository.saveRoutineItem(routineId, item);

@@ -77,11 +77,12 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
     title = routine.title;
     routineStartTime = routine.reminderTime ?? DateTime.now();
     startTime = _formatTime(routineStartTime!);
-    _updateEndTime();
 
     // routineDetailNotifier에 해당 routine의 아이템들 로드 (build 완료 후)
     Future(() {
       ref.read(routineDetailNotifierProvider.notifier).loadRoutineItems(routine.id);
+      // 아이템 로드 후 endTime 업데이트
+      _updateEndTime();
     });
   }
 
@@ -106,8 +107,13 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
       DateTime calculatedEndTime = routineStartTime!.add(
         Duration(hours: totalHours, minutes: totalMinutes),
       );
-      endTime = _formatTime(calculatedEndTime);
-      print(endTime);
+
+      final newEndTime = _formatTime(calculatedEndTime);
+      if (endTime != newEndTime) {
+        setState(() {
+          endTime = newEndTime;
+        });
+      }
     }
   }
 

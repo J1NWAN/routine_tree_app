@@ -21,6 +21,9 @@ class RoutineDetailItem {
   
   @HiveField(5)
   final bool isCompleted;
+  
+  @HiveField(6)
+  final DateTime? createdAt;
 
   RoutineDetailItem({
     this.id,
@@ -29,6 +32,7 @@ class RoutineDetailItem {
     required this.hours,
     required this.minutes,
     this.isCompleted = false,
+    this.createdAt,
   });
 
   RoutineDetailItem copyWith({
@@ -38,6 +42,7 @@ class RoutineDetailItem {
     int? hours,
     int? minutes,
     bool? isCompleted,
+    DateTime? createdAt,
   }) {
     return RoutineDetailItem(
       id: id ?? this.id,
@@ -46,6 +51,7 @@ class RoutineDetailItem {
       hours: hours ?? this.hours,
       minutes: minutes ?? this.minutes,
       isCompleted: isCompleted ?? this.isCompleted,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -57,6 +63,7 @@ class RoutineDetailItem {
       'hours': hours,
       'minutes': minutes,
       'isCompleted': isCompleted,
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 
@@ -68,6 +75,7 @@ class RoutineDetailItem {
       hours: json['hours'],
       minutes: json['minutes'],
       isCompleted: json['isCompleted'] ?? false,
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
   }
 }
