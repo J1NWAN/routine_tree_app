@@ -17,7 +17,13 @@ class RoutineDetailScreen extends ConsumerStatefulWidget {
 
 class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
   final TextEditingController _nameController = TextEditingController();
-
+  final recommendationRoutine = [
+    {'title': '잠자리 정리', 'hours': 0, 'minutes': 1},
+    {'title': '독서', 'hours': 0, 'minutes': 30},
+    {'title': '스트레칭', 'hours': 0, 'minutes': 5},
+    {'title': '아침 식사', 'hours': 0, 'minutes': 15},
+    {'title': '하루치 계획 세우기', 'hours': 0, 'minutes': 10},
+  ];
   int selectedHours = 0;
   int selectedMinutes = 0;
 
@@ -200,7 +206,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
               ...routineDetailItems.map((item) => buildSavedRoutineWidget(item)),
 
               // 루틴 추가 컨테이너 위젯
-              buildRoutineWidget(null),
+              buildRoutineWidget(),
 
               const SizedBox(height: 150),
 
@@ -269,12 +275,12 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
                 ),
                 const SizedBox(height: 15),
                 Column(
-                  children: List.generate(6, (index) {
+                  children: recommendationRoutine.map<Widget>((routine) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10.0),
-                      child: buildRoutineWidget('추천루틴$index'),
+                      child: buildRecommendationWidget(routine),
                     );
-                  }),
+                  }).toList(),
                 ),
               ],
             ],
@@ -285,7 +291,7 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
   }
 
   // 루틴 위젯
-  Widget buildRoutineWidget(String? text) {
+  Widget buildRoutineWidget() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
       width: double.infinity,
@@ -299,28 +305,21 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(text ?? '할 일을 추가해보세요.'),
-          text == null
-              ? GestureDetector(
-                  onTap: () => _showRoutineModal(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.amber,
-                    ),
-                    child: const Icon(
-                      Icons.add,
-                      size: 16,
-                    ),
-                  ),
-                )
-              : GestureDetector(
-                  onTap: () {
-                    print(text);
-                  },
-                  child: const Icon(Icons.add),
-                ),
+          const Text('할 일을 추가해보세요.'),
+          GestureDetector(
+            onTap: () => _showRoutineModal(context),
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.amber,
+              ),
+              child: const Icon(
+                Icons.add,
+                size: 16,
+              ),
+            ),
+          )
         ],
       ),
     );
@@ -672,5 +671,61 @@ class _RoutineDetailScreenState extends ConsumerState<RoutineDetailScreen> {
       _nameController.text = '';
       _editingItem = null; // 수정 아이템 초기화
     }
+  }
+
+  // 추천 루틴 위젯
+  Widget buildRecommendationWidget(Map<String, dynamic> routine) {
+    String title = routine['title'];
+    int hours = routine['hours'];
+    int minutes = routine['minutes'];
+
+    String timeText = '';
+    if (hours > 0 && minutes > 0) {
+      timeText = '$hours시간 $minutes분';
+    } else if (hours > 0) {
+      timeText = '$hours시간';
+    } else if (minutes > 0) {
+      timeText = '$minutes분';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+      width: double.infinity,
+      decoration: ShapeDecoration(
+        shape: DashedBorder(
+          dashSize: 3.0,
+          color: Colors.grey,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Text(title),
+              const SizedBox(width: 10),
+              if (timeText.isNotEmpty)
+                Text(
+                  timeText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+            ],
+          ),
+          GestureDetector(
+            onTap: () {
+              _nameController.text = title;
+              selectedHours = hours;
+              selectedMinutes = minutes;
+              _saveRoutineItem();
+            },
+            child: const Icon(Icons.add),
+          ),
+        ],
+      ),
+    );
   }
 }
